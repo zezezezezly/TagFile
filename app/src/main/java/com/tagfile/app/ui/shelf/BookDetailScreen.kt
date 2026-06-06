@@ -1,0 +1,607 @@
+package com.tagfile.app.ui.shelf
+
+import android.widget.Toast
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import com.tagfile.app.domain.model.Tag
+import com.tagfile.app.ui.common.TagChip
+import com.tagfile.app.ui.theme.TagColors
+import java.io.File
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BookDetailScreen(
+    viewModel: BookDetailViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit = {},
+    onNavigateToRead: (Long) -> Unit = {}
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(uiState.message) {
+        uiState.message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessage()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("书籍详情") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            uiState.book == null -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("书籍不存在", style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            else -> {
+                val book = uiState.book!!
+                var descriptionExpanded by remember { mutableStateOf(false) }
+                var isEditingDescription by remember { mutableStateOf(false) }
+                val descLineCount = if (book.description.isNotBlank()) {
+                    book.description.lines().size + (book.description.length / 30).coerceAtLeast(1)
+                } else 0
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        AsyncImage(
+                            model = File(book.coverPath),
+                            contentDescription = book.title,
+                            modifier = Modifier
+                                .width(140.dp)
+                                .aspectRatio(0.7f)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = book.title,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            if (book.author != null) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = book.author,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFFFFF3E0))
+                                    .clickable { viewModel.showScoreEditor() }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFA000),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = if (book.score > 0f) String.format("%.1f", book.score) else "0.0",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFE65100)
+                                )
+                                Text(
+                                    text = "/ 10.0",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray
+                                )
+                                Icon(
+                                    Icons.Default.Edit,
+                                    contentDescription = null,
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (book.description.isNotBlank() && !isEditingDescription) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .animateContentSize()
+                        ) {
+                            Text(
+                                text = book.description,
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = if (descriptionExpanded) Int.MAX_VALUE else 3,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                if (descLineCount > 3) {
+                                    TextButton(
+                                        onClick = { descriptionExpanded = !descriptionExpanded },
+                                        contentPadding = PaddingValues(0.dp)
+                                    ) {
+                                        Text(
+                                            if (descriptionExpanded) "收起" else "展开",
+                                            style = MaterialTheme.typography.labelMedium
+                                        )
+                                        Icon(
+                                            if (descriptionExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                                TextButton(
+                                    onClick = {
+                                        viewModel.onDescriptionChanged(book.description)
+                                        isEditingDescription = true
+                                    },
+                                    contentPadding = PaddingValues(0.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(2.dp))
+                                    Text("编辑", style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
+                    } else {
+                        OutlinedTextField(
+                            value = uiState.editDescription,
+                            onValueChange = { viewModel.onDescriptionChanged(it) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .heightIn(min = 80.dp),
+                            placeholder = { Text("添加简介...") },
+                            supportingText = {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    if (uiState.isSaving) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(16.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    } else {
+                                        TextButton(
+                                            onClick = {
+                                                isEditingDescription = true
+                                                viewModel.onDescriptionChanged("")
+                                            },
+                                            contentPadding = PaddingValues(0.dp)
+                                        ) {
+                                            Text("取消")
+                                        }
+                                        if (uiState.editDescription.isNotBlank() && uiState.editDescription != book.description) {
+                                            TextButton(
+                                                onClick = {
+                                                    viewModel.saveDescription()
+                                                    isEditingDescription = false
+                                                },
+                                                contentPadding = PaddingValues(0.dp)
+                                            ) {
+                                                Text("保存")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "标签",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        TextButton(onClick = { viewModel.showTagEditor() }) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("编辑标签")
+                        }
+                    }
+
+                    val tagList = book.tags.split("/").filter { it.isNotBlank() }
+                    if (tagList.isNotEmpty()) {
+                        val allTags = uiState.allTags
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            tagList.forEach { tagName ->
+                                val tag = allTags.find { it.name == tagName }
+                                val color = tag?.let { Color(it.color) } ?: Color.Gray
+                                TagChip(
+                                    name = tagName,
+                                    color = color,
+                                    modifier = Modifier.height(28.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = "暂无标签",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        StatItem(
+                            icon = Icons.Default.Collections,
+                            label = "页数",
+                            value = "${book.pageCount}"
+                        )
+                        StatItem(
+                            icon = Icons.Default.Visibility,
+                            label = "浏览次数",
+                            value = "${book.viewCount}"
+                        )
+                        StatItem(
+                            icon = Icons.Default.Timer,
+                            label = "阅读时长",
+                            value = formatDuration(book.totalDuration)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Button(
+                        onClick = { onNavigateToRead(book.id) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .height(52.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.AutoStories, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("开始阅读", style = MaterialTheme.typography.titleMedium)
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            }
+        }
+    }
+
+    if (uiState.showTagEditor) {
+        TagSelectDialog(
+            allTags = uiState.allTags,
+            selectedTagIds = uiState.selectedTagIds,
+            newTagName = uiState.newTagName,
+            newTagColorIndex = uiState.newTagColorIndex,
+            onToggleTag = { viewModel.toggleTag(it) },
+            onNewTagNameChanged = { viewModel.onNewTagNameChanged(it) },
+            onNewTagColorChanged = { viewModel.onNewTagColorChanged(it) },
+            onAddTag = { viewModel.addTag() },
+            onDismiss = { viewModel.dismissTagEditor() },
+            onConfirm = { viewModel.saveTags() }
+        )
+    }
+
+    if (uiState.showScoreEditor) {
+        ScoreEditDialog(
+            scoreText = uiState.editScoreText,
+            onScoreTextChanged = { viewModel.onScoreTextChanged(it) },
+            onDismiss = { viewModel.dismissScoreEditor() },
+            onConfirm = { viewModel.saveScore() }
+        )
+    }
+}
+
+@Composable
+private fun ScoreEditDialog(
+    scoreText: String,
+    onScoreTextChanged: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = { Text("评分") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                OutlinedTextField(
+                    value = scoreText,
+                    onValueChange = onScoreTextChanged,
+                    placeholder = { Text("0.0") },
+                    singleLine = true,
+                    modifier = Modifier.width(120.dp),
+                    textStyle = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "取值范围 0.0 ~ 10.0",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("确定")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+@Composable
+private fun TagSelectDialog(
+    allTags: List<Tag>,
+    selectedTagIds: Set<Long>,
+    newTagName: String,
+    newTagColorIndex: Int,
+    onToggleTag: (Long) -> Unit,
+    onNewTagNameChanged: (String) -> Unit,
+    onNewTagColorChanged: (Int) -> Unit,
+    onAddTag: () -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    val displayedTags = allTags.filter { it.id in selectedTagIds }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = { Text("编辑标签") },
+        text = {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = newTagName,
+                        onValueChange = onNewTagNameChanged,
+                        placeholder = { Text("输入标签名称") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        onClick = onAddTag,
+                        enabled = newTagName.isNotBlank()
+                    ) {
+                        Text("添加")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(6),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.height(60.dp)
+                ) {
+                    itemsIndexed(TagColors) { index, color ->
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                                .then(
+                                    if (index == newTagColorIndex)
+                                        Modifier.border(3.dp, Color.DarkGray, CircleShape)
+                                    else Modifier
+                                )
+                                .clickable { onNewTagColorChanged(index) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (index == newTagColorIndex) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                HorizontalDivider()
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                if (displayedTags.isEmpty()) {
+                    Text(
+                        "暂无标签，请在上方添加。",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 300.dp)
+                    ) {
+                        itemsIndexed(displayedTags, key = { _, tag -> tag.id }) { _, tag ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = true,
+                                    onCheckedChange = { onToggleTag(tag.id) }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                TagChip(
+                                    name = tag.name,
+                                    color = Color(tag.color)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("保存")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+@Composable
+private fun StatItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(28.dp)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+private fun formatDuration(millis: Long): String {
+    val totalSeconds = millis / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    return if (hours > 0) "${hours}h${minutes}m" else "${minutes}分"
+}

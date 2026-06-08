@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.tagfile.app.domain.repository.FileRepository
 import com.tagfile.app.domain.repository.TagRepository
 import com.tagfile.app.domain.usecase.FileOperationsUseCase
-import com.tagfile.app.domain.usecase.ManageTagsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +19,6 @@ class TaggedFilesViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val tagRepository: TagRepository,
     private val fileRepository: FileRepository,
-    private val manageTagsUseCase: ManageTagsUseCase,
     private val fileOperationsUseCase: FileOperationsUseCase
 ) : ViewModel() {
 
@@ -120,7 +118,7 @@ class TaggedFilesViewModel @Inject constructor(
 
     private fun loadTags() {
         viewModelScope.launch {
-            manageTagsUseCase.getAllTags().collect { tags ->
+            tagRepository.getAllTags().collect { tags ->
                 _uiState.update { it.copy(allTags = tags) }
             }
         }
@@ -130,7 +128,7 @@ class TaggedFilesViewModel @Inject constructor(
         viewModelScope.launch {
             val paths = _uiState.value.selectedPaths.toList()
             paths.forEach { path ->
-                manageTagsUseCase.addTagToFile(path, tagId)
+                tagRepository.addTagToFile(path, tagId)
             }
             _uiState.update {
                 it.copy(
@@ -147,7 +145,7 @@ class TaggedFilesViewModel @Inject constructor(
         viewModelScope.launch {
             val paths = _uiState.value.selectedPaths.toList()
             paths.forEach { path ->
-                manageTagsUseCase.removeTagFromFile(path, tagId)
+                tagRepository.removeTagFromFile(path, tagId)
             }
             _uiState.update {
                 it.copy(

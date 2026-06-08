@@ -2,7 +2,7 @@ package com.tagfile.app.enhance.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tagfile.app.data.preferences.PreferencesManager
+import com.tagfile.app.data.preferences.EnhancePreferences
 import com.tagfile.app.enhance.data.repository.FilterPreset
 import com.tagfile.app.enhance.data.repository.FilterPresetRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,11 +20,11 @@ data class FilterLibraryUiState(
 @HiltViewModel
 class FilterLibraryViewModel @Inject constructor(
     private val repository: FilterPresetRepository,
-    private val preferencesManager: PreferencesManager
+    private val enhancePreferences: EnhancePreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
-        FilterLibraryUiState(activeFilterId = preferencesManager.getActiveFilterPresetId())
+        FilterLibraryUiState(activeFilterId = enhancePreferences.getActiveFilterPresetId())
     )
     val uiState: StateFlow<FilterLibraryUiState> = _uiState.asStateFlow()
 
@@ -37,14 +37,14 @@ class FilterLibraryViewModel @Inject constructor(
     }
 
     fun selectFilter(filter: FilterPreset) {
-        preferencesManager.setActiveFilterPresetId(filter.id)
+        enhancePreferences.setActiveFilterPresetId(filter.id)
         _uiState.value = _uiState.value.copy(activeFilterId = filter.id)
     }
 
     fun deleteFilter(filter: FilterPreset) {
         viewModelScope.launch {
             if (_uiState.value.activeFilterId == filter.id) {
-                preferencesManager.setActiveFilterPresetId(-1L)
+                enhancePreferences.setActiveFilterPresetId(-1L)
                 _uiState.value = _uiState.value.copy(activeFilterId = -1L)
             }
             repository.delete(filter.id)

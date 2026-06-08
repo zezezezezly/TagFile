@@ -2,7 +2,7 @@ package com.tagfile.app.ui.tagmanager
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tagfile.app.domain.usecase.ManageTagsUseCase
+import com.tagfile.app.domain.repository.TagRepository
 import com.tagfile.app.ui.theme.TagColors
 import com.tagfile.app.ui.theme.toIntArgb
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TagManagerViewModel @Inject constructor(
-    private val manageTagsUseCase: ManageTagsUseCase
+    private val tagRepository: TagRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TagManagerUiState())
@@ -91,7 +91,7 @@ class TagManagerViewModel @Inject constructor(
 
     private fun loadTags() {
         viewModelScope.launch {
-            manageTagsUseCase.getAllTags().collect { tags ->
+            tagRepository.getAllTags().collect { tags ->
                 _uiState.update { it.copy(tags = tags) }
             }
         }
@@ -100,7 +100,7 @@ class TagManagerViewModel @Inject constructor(
     private fun loadFileCounts() {
         viewModelScope.launch {
             try {
-                val counts = manageTagsUseCase.getTagFileCounts()
+                val counts = tagRepository.getTagFileCounts()
                 _uiState.update { it.copy(tagFileCounts = counts) }
             } catch (_: Exception) { }
         }
@@ -122,9 +122,9 @@ class TagManagerViewModel @Inject constructor(
             val colorArgb = color.toIntArgb()
 
             state.editingTag?.let { existing ->
-                manageTagsUseCase.updateTag(existing.copy(name = name, color = colorArgb))
+                tagRepository.updateTag(existing.copy(name = name, color = colorArgb))
             } ?: run {
-                manageTagsUseCase.createTag(name, colorArgb)
+                tagRepository.createTag(name, colorArgb)
             }
 
             _uiState.update { it.copy(showEditorDialog = false) }
@@ -135,7 +135,7 @@ class TagManagerViewModel @Inject constructor(
     private fun deleteTag() {
         val tag = _uiState.value.deleteTargetTag ?: return
         viewModelScope.launch {
-            manageTagsUseCase.deleteTag(tag.id)
+            tagRepository.deleteTag(tag.id)
             _uiState.update { it.copy(showDeleteConfirm = false, deleteTargetTag = null) }
             loadFileCounts()
         }

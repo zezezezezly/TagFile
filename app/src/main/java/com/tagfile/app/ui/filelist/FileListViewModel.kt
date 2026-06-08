@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.tagfile.app.domain.repository.TagRepository
 import com.tagfile.app.domain.usecase.BrowseFilesUseCase
 import com.tagfile.app.domain.usecase.FileOperationsUseCase
-import com.tagfile.app.domain.usecase.ManageTagsUseCase
 import com.tagfile.app.ui.common.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +20,6 @@ import javax.inject.Inject
 class FileListViewModel @Inject constructor(
     private val browseFilesUseCase: BrowseFilesUseCase,
     private val fileOperationsUseCase: FileOperationsUseCase,
-    private val manageTagsUseCase: ManageTagsUseCase,
     private val tagRepository: TagRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -193,7 +191,7 @@ class FileListViewModel @Inject constructor(
         viewModelScope.launch {
             val paths = _uiState.value.selectedPaths.toList()
             paths.forEach { path ->
-                manageTagsUseCase.addTagToFile(path, tagId)
+                tagRepository.addTagToFile(path, tagId)
             }
             _uiState.update { it.copy(showTagSelector = false, operationMessage = "已为 ${paths.size} 个项目添加标签") }
             reloadCurrentDirectory()
@@ -204,7 +202,7 @@ class FileListViewModel @Inject constructor(
         viewModelScope.launch {
             val paths = _uiState.value.selectedPaths.toList()
             paths.forEach { path ->
-                manageTagsUseCase.removeTagFromFile(path, tagId)
+                tagRepository.removeTagFromFile(path, tagId)
             }
             _uiState.update { it.copy(showRemoveTagSelector = false, operationMessage = "已为 ${paths.size} 个项目移除标签") }
             reloadCurrentDirectory()

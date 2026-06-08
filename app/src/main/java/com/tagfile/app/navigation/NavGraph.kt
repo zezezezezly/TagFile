@@ -1,5 +1,6 @@
 package com.tagfile.app.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,6 +33,7 @@ import com.tagfile.app.ui.settings.SettingsScreen
 import com.tagfile.app.ui.taggedfiles.TaggedFilesScreen
 import com.tagfile.app.ui.tagmanager.TagManagerScreen
 import com.tagfile.app.ui.typefiles.TypeFilesScreen
+import org.json.JSONArray
 
 object Routes {
     const val HOME = "home"
@@ -43,8 +45,8 @@ object Routes {
     const val CATEGORY = "category"
     const val SETTINGS = "settings"
     const val PERSONALIZATION = "personalization"
-    const val IMAGE_VIEWER = "image_viewer"
-    const val ENHANCE = "enhance"
+    const val IMAGE_VIEWER = "image_viewer?paths={paths}&index={index}"
+    const val ENHANCE = "enhance?path={path}"
     const val FILTER_LIBRARY = "filter_library"
     const val FILTER_SETTINGS = "filter_settings/{filterId}"
     const val SHELF = "shelf"
@@ -225,21 +227,39 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Routes.IMAGE_VIEWER) {
+        composable(
+            route = Routes.IMAGE_VIEWER,
+            arguments = listOf(
+                navArgument("paths") { type = NavType.StringType },
+                navArgument("index") { type = NavType.IntType; defaultValue = 0 }
+            )
+        ) { backStackEntry ->
+            val pathsJson = backStackEntry.arguments?.getString("paths") ?: "[]"
+            val index = backStackEntry.arguments?.getInt("index") ?: 0
+            val paths: List<String> = try {
+                val jsonArray = JSONArray(pathsJson)
+                (0 until jsonArray.length()).map { jsonArray.getString(it) }
+            } catch (_: Exception) { emptyList() }
             ImageViewerScreen(
-                imagePaths = ImageViewerData.imagePaths,
-                initialIndex = ImageViewerData.initialIndex,
+                imagePaths = paths,
+                initialIndex = index,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEnhance = { path ->
-                    ImageViewerData.currentEnhancePath = path
-                    navController.navigate(Routes.ENHANCE)
+                    val encoded = Uri.encode(path)
+                    navController.navigate("enhance?path=$encoded")
                 }
             )
         }
 
-        composable(Routes.ENHANCE) {
+        composable(
+            route = Routes.ENHANCE,
+            arguments = listOf(
+                navArgument("path") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val imagePath = Uri.decode(backStackEntry.arguments?.getString("path") ?: "")
             EnhanceScreen(
-                imagePath = ImageViewerData.currentEnhancePath,
+                imagePath = imagePath,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -309,8 +329,8 @@ fun NavGraph(navController: NavHostController) {
                     initialIndex = 0,
                     onNavigateBack = { navController.popBackStack() },
                     onNavigateToEnhance = { path ->
-                        ImageViewerData.currentEnhancePath = path
-                        navController.navigate(Routes.ENHANCE)
+                        val encoded = Uri.encode(path)
+                        navController.navigate("enhance?path=$encoded")
                     }
                 )
             } else if (uiState.error != null) {
@@ -336,7 +356,8 @@ fun navigateToImageViewer(
     index: Int
 ) {
     if (imagePaths.isEmpty()) return
-    ImageViewerData.imagePaths = imagePaths
-    ImageViewerData.initialIndex = index.coerceIn(0, (imagePaths.size - 1).coerceAtLeast(0))
-    navController.navigate(Routes.IMAGE_VIEWER)
+    val jsonArray = JSONArray(imagePaths)
+    val encodedPaths = Uri.encode(jsonArray.toString())
+    val safeIndex = index.coerceIn(0, (imagePaths.size - 1).coerceAtLeast(0))
+    navController.navigate("image_viewer?paths=$encodedPaths&index=$safeIndex")
 }

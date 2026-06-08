@@ -15,6 +15,9 @@ interface FileIndexDao {
     @Query("DELETE FROM file_index")
     suspend fun deleteAll()
 
+    @Query("SELECT * FROM file_index")
+    suspend fun getAllList(): List<FileIndexEntity>
+
     @Query("SELECT COUNT(*) FROM file_index")
     suspend fun count(): Long
 

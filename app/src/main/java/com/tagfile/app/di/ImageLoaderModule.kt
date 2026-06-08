@@ -9,6 +9,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -28,6 +29,23 @@ object ImageLoaderModule {
             .memoryCachePolicy(CachePolicy.ENABLED)
             .allowHardware(false)
             .crossfade(true)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @Named("viewer")
+    fun provideViewerImageLoader(@ApplicationContext context: Context): ImageLoader {
+        return ImageLoader.Builder(context)
+            .diskCache(
+                DiskCache.Builder()
+                    .directory(java.io.File(context.cacheDir, "image_cache"))
+                    .maxSizeBytes(512L * 1024 * 1024)
+                    .build()
+            )
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .allowHardware(true)
+            .crossfade(false)
             .build()
     }
 }

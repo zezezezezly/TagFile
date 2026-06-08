@@ -18,9 +18,18 @@ interface TagDao {
     @Query("SELECT * FROM tags ORDER BY sort_order ASC, created_at DESC")
     fun getAll(): Flow<List<TagEntity>>
 
+    @Query("SELECT * FROM tags ORDER BY sort_order ASC, created_at DESC")
+    suspend fun getAllList(): List<TagEntity>
+
     @Query("SELECT * FROM tags WHERE id = :tagId")
     suspend fun getById(tagId: Long): TagEntity?
 
     @Query("SELECT * FROM tags WHERE id = :tagId")
     fun getByIdFlow(tagId: Long): Flow<TagEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(tags: List<TagEntity>)
+
+    @Query("DELETE FROM tags")
+    suspend fun deleteAll()
 }

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tagfile.app.domain.model.SearchFilter
 import com.tagfile.app.domain.model.TagMode
-import com.tagfile.app.domain.usecase.ManageTagsUseCase
+import com.tagfile.app.domain.repository.TagRepository
 import com.tagfile.app.domain.usecase.SearchFilesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -19,7 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchFilesUseCase: SearchFilesUseCase,
-    private val manageTagsUseCase: ManageTagsUseCase
+    private val tagRepository: TagRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -160,7 +160,7 @@ class SearchViewModel @Inject constructor(
 
     private fun loadAllTags() {
         viewModelScope.launch {
-            manageTagsUseCase.getAllTags().collect { tags ->
+            tagRepository.getAllTags().collect { tags ->
                 _uiState.update { it.copy(allTags = tags) }
             }
         }
@@ -218,7 +218,7 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch {
             val paths = _uiState.value.selectedPaths.toList()
             paths.forEach { path ->
-                manageTagsUseCase.addTagToFile(path, tagId)
+                tagRepository.addTagToFile(path, tagId)
             }
             _uiState.update {
                 it.copy(
@@ -235,7 +235,7 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch {
             val paths = _uiState.value.selectedPaths.toList()
             paths.forEach { path ->
-                manageTagsUseCase.removeTagFromFile(path, tagId)
+                tagRepository.removeTagFromFile(path, tagId)
             }
             _uiState.update {
                 it.copy(

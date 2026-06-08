@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tagfile.app.data.preferences.PreferencesManager
+import com.tagfile.app.data.preferences.EnhancePreferences
 import com.tagfile.app.enhance.data.repository.FilterPresetRepository
 import com.tagfile.app.enhance.domain.usecase.EnhanceImageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,13 +26,13 @@ data class ImageViewerUiState(
 
 @HiltViewModel
 class ImageViewerViewModel @Inject constructor(
-    private val preferencesManager: PreferencesManager,
+    private val enhancePreferences: EnhancePreferences,
     private val enhanceImageUseCase: EnhanceImageUseCase,
     private val filterRepository: FilterPresetRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
-        ImageViewerUiState(isContinuousEnhance = preferencesManager.continuousEnhance.value)
+        ImageViewerUiState(isContinuousEnhance = enhancePreferences.continuousEnhance.value)
     )
     val uiState: StateFlow<ImageViewerUiState> = _uiState.asStateFlow()
 
@@ -41,7 +41,7 @@ class ImageViewerViewModel @Inject constructor(
 
     fun toggleContinuousEnhance() {
         val newValue = !_uiState.value.isContinuousEnhance
-        preferencesManager.setContinuousEnhance(newValue)
+        enhancePreferences.setContinuousEnhance(newValue)
         _uiState.update { it.copy(isContinuousEnhance = newValue) }
         if (!newValue) {
             clearEnhanced()
@@ -71,12 +71,12 @@ class ImageViewerViewModel @Inject constructor(
 
             try {
                 val params = withContext(Dispatchers.Default) {
-                    val activeId = preferencesManager.getActiveFilterPresetId()
+                    val activeId = enhancePreferences.getActiveFilterPresetId()
                     if (activeId > 0) {
                         filterRepository.getParamsById(activeId)
-                            ?: preferencesManager.getEnhanceParams()
+                            ?: enhancePreferences.getEnhanceParams()
                     } else {
-                        preferencesManager.getEnhanceParams()
+                        enhancePreferences.getEnhanceParams()
                     }
                 }
 

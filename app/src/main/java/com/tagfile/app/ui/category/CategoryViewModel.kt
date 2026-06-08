@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.tagfile.app.data.filesystem.FileIndexer
 import com.tagfile.app.domain.model.FileType
 import com.tagfile.app.domain.repository.SearchRepository
+import com.tagfile.app.domain.repository.TagRepository
 import com.tagfile.app.domain.usecase.FileOperationsUseCase
-import com.tagfile.app.domain.usecase.ManageTagsUseCase
 import com.tagfile.app.domain.usecase.SearchFilesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CategoryViewModel @Inject constructor(
     private val searchFilesUseCase: SearchFilesUseCase,
-    private val manageTagsUseCase: ManageTagsUseCase,
+    private val tagRepository: TagRepository,
     private val fileOperationsUseCase: FileOperationsUseCase,
     private val searchRepository: SearchRepository,
     private val fileIndexer: FileIndexer
@@ -145,7 +145,7 @@ class CategoryViewModel @Inject constructor(
 
     private fun loadTags() {
         viewModelScope.launch {
-            manageTagsUseCase.getAllTags().collect { tags ->
+            tagRepository.getAllTags().collect { tags ->
                 _uiState.update { it.copy(allTags = tags, tags = tags.take(10)) }
             }
         }
@@ -155,7 +155,7 @@ class CategoryViewModel @Inject constructor(
         viewModelScope.launch {
             val paths = _uiState.value.selectedPaths.toList()
             paths.forEach { path ->
-                manageTagsUseCase.addTagToFile(path, tagId)
+                tagRepository.addTagToFile(path, tagId)
             }
             _uiState.update {
                 it.copy(
@@ -172,7 +172,7 @@ class CategoryViewModel @Inject constructor(
         viewModelScope.launch {
             val paths = _uiState.value.selectedPaths.toList()
             paths.forEach { path ->
-                manageTagsUseCase.removeTagFromFile(path, tagId)
+                tagRepository.removeTagFromFile(path, tagId)
             }
             _uiState.update {
                 it.copy(

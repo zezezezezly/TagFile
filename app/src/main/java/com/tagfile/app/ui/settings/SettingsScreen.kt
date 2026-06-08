@@ -1,9 +1,13 @@
 package com.tagfile.app.ui.settings
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,11 +27,55 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    // 导出文件选择器
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let { viewModel.exportToUri(it) }
+    }
+
+    // 导入文件选择器
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { viewModel.readImportFile(it) }
+    }
+
     LaunchedEffect(uiState.message) {
         uiState.message?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             viewModel.onEvent(SettingsEvent.ClearMessage)
         }
+    }
+
+    // 导入模式选择对话框
+    if (uiState.showImportModeDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onEvent(SettingsEvent.DismissImportModeDialog) },
+            title = { Text("导入模式") },
+            text = { Text("请选择导入方式：\n\n· 全量替换：清空现有数据后导入\n· 合并：按主键覆盖已有数据") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.onEvent(SettingsEvent.ConfirmImportMode(isReplace = true))
+                }) {
+                    Text("全量替换")
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        viewModel.onEvent(SettingsEvent.ConfirmImportMode(isReplace = false))
+                    }) {
+                        Text("合并")
+                    }
+                    TextButton(onClick = {
+                        viewModel.onEvent(SettingsEvent.DismissImportModeDialog)
+                    }) {
+                        Text("取消")
+                    }
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -86,6 +134,64 @@ fun SettingsScreen(
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(40.dp)
+                        )
+                    }
+                )
+            }
+
+            HorizontalDivider()
+
+            // --- 数据导入导出 ---
+            Text(
+                text = "数据管理",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp)
+            )
+
+            Surface(
+                onClick = {
+                    if (!uiState.isExporting) {
+                        exportLauncher.launch("tagfile_backup.json")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                ListItem(
+                    headlineContent = { Text("导出数据") },
+                    supportingContent = {
+                        Text(if (uiState.isExporting) "正在导出..." else "将所有数据导出为 JSON 文件")
+                    },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.FileUpload,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+            }
+
+            HorizontalDivider()
+
+            Surface(
+                onClick = {
+                    if (!uiState.isImporting) {
+                        importLauncher.launch(arrayOf("application/json"))
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                ListItem(
+                    headlineContent = { Text("导入数据") },
+                    supportingContent = {
+                        Text(if (uiState.isImporting) "正在导入..." else "从 JSON 文件恢复数据")
+                    },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.FileDownload,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 )

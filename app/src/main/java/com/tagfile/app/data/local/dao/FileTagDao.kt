@@ -57,6 +57,12 @@ interface FileTagDao {
 
     @Query("SELECT tag_id AS tagId, COUNT(DISTINCT file_path) AS count FROM file_tag_cross_ref GROUP BY tag_id")
     suspend fun getTagFileCounts(): List<TagFileCount>
+
+    @Query("SELECT * FROM file_tag_cross_ref")
+    suspend fun getAllList(): List<FileTagCrossRefEntity>
+
+    @Query("DELETE FROM file_tag_cross_ref")
+    suspend fun deleteAll()
 }
 
 data class TagFileCount(

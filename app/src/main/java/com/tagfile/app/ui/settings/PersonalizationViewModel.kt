@@ -5,7 +5,8 @@ import android.graphics.Color
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tagfile.app.data.preferences.PreferencesManager
+import com.tagfile.app.data.preferences.AppearancePreferences
+import com.tagfile.app.data.preferences.WallpaperPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -41,17 +42,18 @@ sealed class PersonalizationEvent {
 @HiltViewModel
 class PersonalizationViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val preferencesManager: PreferencesManager
+    private val wallpaperPreferences: WallpaperPreferences,
+    private val appearancePreferences: AppearancePreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         PersonalizationUiState(
-            wallpaperPath = preferencesManager.wallpaperPath.value,
-            wallpaperOpacity = preferencesManager.wallpaperOpacity.value,
-            textColor = preferencesManager.customTextColor.value,
-            iconColor = preferencesManager.customIconColor.value,
-            strokeEnabled = preferencesManager.strokeEnabled.value,
-            strokeColor = preferencesManager.strokeColor.value
+            wallpaperPath = wallpaperPreferences.wallpaperPath.value,
+            wallpaperOpacity = wallpaperPreferences.wallpaperOpacity.value,
+            textColor = appearancePreferences.customTextColor.value,
+            iconColor = appearancePreferences.customIconColor.value,
+            strokeEnabled = appearancePreferences.strokeEnabled.value,
+            strokeColor = appearancePreferences.strokeColor.value
         )
     )
     val uiState: StateFlow<PersonalizationUiState> = _uiState.asStateFlow()
@@ -60,35 +62,35 @@ class PersonalizationViewModel @Inject constructor(
         when (event) {
             is PersonalizationEvent.UpdateWallpaperOpacity -> {
                 _uiState.update { it.copy(wallpaperOpacity = event.value) }
-                preferencesManager.setWallpaperOpacity(event.value)
+                wallpaperPreferences.setWallpaperOpacity(event.value)
             }
             is PersonalizationEvent.SelectWallpaper -> {
                 viewModelScope.launch {
                     val savedPath = copyWallpaperToInternal(event.path)
                     _uiState.update { it.copy(wallpaperPath = savedPath) }
-                    preferencesManager.setWallpaperPath(savedPath)
+                    wallpaperPreferences.setWallpaperPath(savedPath)
                 }
             }
             is PersonalizationEvent.RemoveWallpaper -> {
                 _uiState.update { it.copy(wallpaperPath = null) }
-                preferencesManager.setWallpaperPath(null)
+                wallpaperPreferences.setWallpaperPath(null)
             }
             is PersonalizationEvent.UpdateTextColor -> {
                 _uiState.update { it.copy(textColor = event.color) }
-                preferencesManager.setCustomTextColor(event.color)
+                appearancePreferences.setCustomTextColor(event.color)
             }
             is PersonalizationEvent.UpdateIconColor -> {
                 _uiState.update { it.copy(iconColor = event.color) }
-                preferencesManager.setCustomIconColor(event.color)
+                appearancePreferences.setCustomIconColor(event.color)
             }
             is PersonalizationEvent.ToggleStroke -> {
                 val newValue = !_uiState.value.strokeEnabled
                 _uiState.update { it.copy(strokeEnabled = newValue) }
-                preferencesManager.setStrokeEnabled(newValue)
+                appearancePreferences.setStrokeEnabled(newValue)
             }
             is PersonalizationEvent.UpdateStrokeColor -> {
                 _uiState.update { it.copy(strokeColor = event.color) }
-                preferencesManager.setStrokeColor(event.color)
+                appearancePreferences.setStrokeColor(event.color)
             }
         }
     }
@@ -109,7 +111,7 @@ class PersonalizationViewModel @Inject constructor(
                 }
                 if (savedPath != null) {
                     _uiState.update { it.copy(wallpaperPath = savedPath) }
-                    preferencesManager.setWallpaperPath(savedPath)
+                    wallpaperPreferences.setWallpaperPath(savedPath)
                 }
             } catch (_: Exception) { }
         }

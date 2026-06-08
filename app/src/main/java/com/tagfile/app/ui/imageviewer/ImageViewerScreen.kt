@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -33,7 +33,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoFixHigh
-import androidx.compose.material.icons.filled.AutoFixNormal
 import androidx.compose.material.icons.filled.AutoFixOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -69,8 +68,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import coil.imageLoader
 import coil.request.ImageRequest
+import com.tagfile.app.di.ImageViewerEntryPoint
+import dagger.hilt.android.EntryPointAccessors
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -94,7 +94,11 @@ fun ImageViewerScreen(
     var isImmersive by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val imageLoader = context.imageLoader
+    val viewerImageLoader = remember {
+        EntryPointAccessors.fromApplication<ImageViewerEntryPoint>(
+            context.applicationContext
+        ).viewerImageLoader
+    }
     val scope = rememberCoroutineScope()
 
     val view = LocalView.current
@@ -132,7 +136,7 @@ fun ImageViewerScreen(
         val end = (current + 3).coerceAtMost(validPaths.size - 1)
         for (i in start..end) {
             if (i != current) {
-                imageLoader.enqueue(
+                viewerImageLoader.enqueue(
                     ImageRequest.Builder(context)
                         .data(File(validPaths[i]))
                         .build()
@@ -277,13 +281,13 @@ fun ImageViewerScreen(
                 ) {
                     AsyncImage(
                         model = File(path),
-                        imageLoader = imageLoader,
+                        imageLoader = viewerImageLoader,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Fit
                     )
                     if (isCurrentEnhanced) {
-                        androidx.compose.foundation.Image(
+                        Image(
                             bitmap = uiState.enhancedBitmap!!.asImageBitmap(),
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
@@ -385,7 +389,7 @@ fun ImageViewerScreen(
                             val isCurrent = index == pagerState.currentPage
                             AsyncImage(
                                 model = File(path),
-                                imageLoader = imageLoader,
+                                imageLoader = viewerImageLoader,
                                 contentDescription = null,
                                 modifier = Modifier
                                     .height(48.dp)

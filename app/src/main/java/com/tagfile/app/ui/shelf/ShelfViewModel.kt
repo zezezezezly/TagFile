@@ -2,7 +2,7 @@ package com.tagfile.app.ui.shelf
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tagfile.app.data.preferences.PreferencesManager
+import com.tagfile.app.data.preferences.ShelfPreferences
 import com.tagfile.app.domain.repository.SearchMode
 import com.tagfile.app.domain.repository.ShelfRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,7 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ShelfViewModel @Inject constructor(
     private val shelfRepository: ShelfRepository,
-    private val preferencesManager: PreferencesManager
+    private val shelfPreferences: ShelfPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ShelfUiState())
@@ -29,10 +29,10 @@ class ShelfViewModel @Inject constructor(
     private var booksJob: Job? = null
 
     init {
-        _uiState.update { it.copy(shelfPath = preferencesManager.shelfFolderPath.value) }
+        _uiState.update { it.copy(shelfPath = shelfPreferences.shelfFolderPath.value) }
 
         viewModelScope.launch {
-            preferencesManager.shelfFolderPath.collect { path ->
+            shelfPreferences.shelfFolderPath.collect { path ->
                 _uiState.update { it.copy(shelfPath = path) }
                 if (_uiState.value.searchQuery.isBlank()) {
                     loadAllBooks()
@@ -91,7 +91,7 @@ class ShelfViewModel @Inject constructor(
 
     private fun loadRecommendations() {
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val savedDate = preferencesManager.getRecommendationDate()
+        val savedDate = shelfPreferences.getRecommendationDate()
         if (today == savedDate && _uiState.value.recommendations.isNotEmpty()) return
         val seed = today.hashCode().toLong()
         doRefreshRecommendations(seed)
@@ -104,7 +104,7 @@ class ShelfViewModel @Inject constructor(
 
     private fun doRefreshRecommendations(seed: Long) {
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        preferencesManager.setRecommendationDate(today)
+        shelfPreferences.setRecommendationDate(today)
         viewModelScope.launch {
             try {
                 val books = shelfRepository.getDailyRecommendations(3, seed)

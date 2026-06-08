@@ -14,16 +14,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import coil.compose.AsyncImage
-import com.tagfile.app.data.preferences.PreferencesManager
+import com.tagfile.app.data.preferences.WallpaperPreferences
 import java.io.File
 
 @Composable
 fun WallpaperBackground(
-    preferencesManager: PreferencesManager,
+    wallpaperPreferences: WallpaperPreferences,
     content: @Composable () -> Unit
 ) {
-    val wallpaperPath by preferencesManager.wallpaperPath.collectAsState()
-    val wallpaperOpacity by preferencesManager.wallpaperOpacity.collectAsState()
+    val wallpaperPath by wallpaperPreferences.wallpaperPath.collectAsState()
+    val wallpaperOpacity by wallpaperPreferences.wallpaperOpacity.collectAsState()
     val hasWallpaper = wallpaperPath != null && File(wallpaperPath!!).exists()
     val view = LocalView.current
 

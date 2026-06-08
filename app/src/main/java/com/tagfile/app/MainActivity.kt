@@ -7,7 +7,8 @@ import androidx.compose.runtime.*
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
 import com.tagfile.app.data.filesystem.FileIndexer
-import com.tagfile.app.data.preferences.PreferencesManager
+import com.tagfile.app.data.preferences.AppearancePreferences
+import com.tagfile.app.data.preferences.WallpaperPreferences
 import com.tagfile.app.navigation.NavGraph
 import com.tagfile.app.ui.theme.TagFileTheme
 import com.tagfile.app.ui.theme.WallpaperBackground
@@ -21,18 +22,21 @@ class MainActivity : ComponentActivity() {
     lateinit var fileIndexer: FileIndexer
 
     @Inject
-    lateinit var preferencesManager: PreferencesManager
+    lateinit var appearancePreferences: AppearancePreferences
+
+    @Inject
+    lateinit var wallpaperPreferences: WallpaperPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
-            val darkMode by preferencesManager.isDarkMode.collectAsState()
+            val darkMode by appearancePreferences.isDarkMode.collectAsState()
             TagFileTheme(
-                preferencesManager = preferencesManager,
+                appearancePreferences = appearancePreferences,
                 darkTheme = darkMode
             ) {
-                WallpaperBackground(preferencesManager = preferencesManager) {
+                WallpaperBackground(wallpaperPreferences = wallpaperPreferences) {
                     MainScreen()
                 }
             }

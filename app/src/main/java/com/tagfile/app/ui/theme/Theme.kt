@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.tagfile.app.data.preferences.PreferencesManager
+import com.tagfile.app.data.preferences.AppearancePreferences
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -35,7 +35,7 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun TagFileTheme(
-    preferencesManager: PreferencesManager,
+    appearancePreferences: AppearancePreferences,
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
@@ -49,10 +49,10 @@ fun TagFileTheme(
         else -> LightColorScheme
     }
 
-    val customTextColor by preferencesManager.customTextColor.collectAsState()
-    val customIconColor by preferencesManager.customIconColor.collectAsState()
-    val strokeEnabled by preferencesManager.strokeEnabled.collectAsState()
-    val strokeColorInt by preferencesManager.strokeColor.collectAsState()
+    val customTextColor by appearancePreferences.customTextColor.collectAsState()
+    val customIconColor by appearancePreferences.customIconColor.collectAsState()
+    val strokeEnabled by appearancePreferences.strokeEnabled.collectAsState()
+    val strokeColorInt by appearancePreferences.strokeColor.collectAsState()
 
     val textColor = Color(customTextColor)
     val iconColor = Color(customIconColor)

@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.1] - 2026-06-06
+
+### Refactored & Added
+
+#### 偏好设置重构 (Preferences Refactor)
+- 将单体 `PreferencesManager` 拆分为 4 个领域专用类：`AppearancePreferences`、`EnhancePreferences`、`ShelfPreferences`、`WallpaperPreferences`
+- ViewModel 直接调用 `TagRepository` 而非通过 `ManageTagsUseCase`（`ManageTagsUseCase` 已移除）
+- `ImageViewerData` 单例替换为 `ImageViewerEntryPoint`（Hilt `@EntryPoint`）
+- 所有 ViewModel、Theme、WallpaperBackground 适配新的偏好设置类
+
+#### 书架增强 (Bookshelf Enhancement)
+- 新增 `ShelfRepository.updateBookAuthor()` 和 `AuthorEditDialog`：书籍详情页支持手动编辑作者名（点击作者行跳转作者列表）
+- 新增 `AuthorGroup` 数据类：`BookListScreen` 按作者排序时以可展开/折叠的分组列表展示
+- 新增 `sortMode` 路由参数：`book_list?query=&mode=&sortMode=` 支持作者模式导航
+- 新增 `BookDetailViewModel.showAuthorEditor()` / `saveAuthor()` 方法
+
+#### 书籍数据修复 (Book Data Repair)
+- 新增 `ShelfRepositoryImpl.repairBookData()`：自动检查并修复以下问题：
+  - 删除重复书籍记录（按 folderPath 去重）
+  - 修正书籍标题（根据文件夹名重新解析）
+  - 修正页数（重新扫描文件夹内图片数量）
+  - 修复丢失的封面（自动取第一张图片）
+- 新增 `RepairResult` 领域模型
+- 书架设置页新增"修复数据"入口，修复结果以弹窗展示
+
+#### 数据库导入/导出增强
+- `DatabaseExport` 新增 `BookJson.score` 字段支持评分导出
+- `ShelfSettingsScreen` 新增数据导入/导出完整 UI（替换模式与合并模式）
+
+---
+
 ## [v1.0.0] - 2026-06-02
 
 ### First Release

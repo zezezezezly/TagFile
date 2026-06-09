@@ -2,7 +2,7 @@
 
 Android 标签化文件管理器 | Android Tag-based File Manager
 
-![TagFile](https://img.shields.io/badge/Version-1.0.0-blue)
+![TagFile](https://img.shields.io/badge/Version-1.0.1-blue)
 ![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-green)
 ![Target SDK](https://img.shields.io/badge/Target%20SDK-34%20(Android%2014)-orange)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
@@ -105,10 +105,11 @@ TagFile/
 ├── app/
 │   └── src/main/java/com/tagfile/app/
 │       ├── data/                    # 数据层 Data Layer
+│       │   ├── export/             # 数据库导出/导入模型（DatabaseExport）
 │       │   ├── filesystem/         # 文件系统操作（FileSystemManager, FileScanner, ThumbnailProvider）
 │       │   ├── local/              # Room 数据库（AppDatabase, DAOs, Entities）
 │       │   ├── mapper/             # Entity ↔ Domain Model 映射
-│       │   ├── preferences/        # SharedPreferences 管理（PreferencesManager）
+│       │   ├── preferences/        # 偏好设置（Appearance/Enhance/Shelf/WallpaperPreferences）
 │       │   ├── repository/         # Repository 接口实现
 │       │   ├── enhance/            # 图像增强模块
 │       │   │   ├── data/           # 处理器（Anime4K, GlProgram, GlShaders, GpuProcessor）
@@ -116,10 +117,10 @@ TagFile/
 │       │   │   └── ui/             # 增强 UI（EnhanceScreen, FilterLibrary, FilterSettings）
 │       │   └── repository/
 │       ├── domain/                  # 领域层 Domain Layer（纯 Kotlin，无 Android 依赖）
-│       │   ├── model/               # 数据模型（Book, FileItem, FileType, SearchFilter, Tag）
+│       │   ├── model/               # 数据模型（Book, FileItem, FileType, RepairResult, SearchFilter, Tag）
 │       │   ├── repository/          # Repository 接口定义
-│       │   └── usecase/            # 用例（BrowseFiles, FileOperations, ManageTags, SearchFiles）
-│       ├── di/                      # Hilt DI 模块
+│       │   └── usecase/            # 用例（BrowseFiles, FileOperations, SearchFiles）
+│       ├── di/                      # Hilt DI 模块（含 ImageViewerEntryPoint）
 │       ├── navigation/              # Navigation Compose 导航图
 │       ├── ui/                      # UI 层（所有 Compose Screen & ViewModel）
 │       │   ├── bookviewer/          # 书籍浏览
@@ -163,6 +164,7 @@ app/build/outputs/apk/debug/app-debug.apk
 
 | 版本 | Version | 说明 | Description |
 |------|---------|------|-------------|
+| v1.0.1 | 2026-06 | 偏好设置重构、书籍数据修复与作者管理 | Preferences refactor, book data repair, author management |
 | v1.0.0 | 2026-06 | 首次正式发布 - TagFile 标签化文件管理器 | Initial Release - TagFile Tag-based File Manager |
 
 详细更新日志请参阅 [CHANGELOG.md](./CHANGELOG.md)

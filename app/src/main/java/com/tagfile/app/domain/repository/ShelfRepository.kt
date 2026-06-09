@@ -1,6 +1,7 @@
 package com.tagfile.app.domain.repository
 
 import com.tagfile.app.domain.model.Book
+import com.tagfile.app.domain.model.RepairResult
 import kotlinx.coroutines.flow.Flow
 
 enum class SearchMode { TITLE, AUTHOR, TAGS }
@@ -18,6 +19,8 @@ interface ShelfRepository {
     suspend fun updateBookDescription(id: Long, description: String)
     suspend fun updateBookScore(id: Long, score: Float)
     suspend fun updateBookTags(id: Long, tags: String)
+    suspend fun updateBookAuthor(id: Long, author: String?)
     suspend fun createBookTag(name: String, color: Int): Long
     fun getAllBookTags(): Flow<List<com.tagfile.app.domain.model.Tag>>
+    suspend fun repairBookData(): List<RepairResult>
 }

@@ -6,6 +6,8 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -137,6 +139,32 @@ fun ShelfSettingsScreen(
 
             HorizontalDivider()
 
+            ListItem(
+                headlineContent = { Text("修复数据") },
+                supportingContent = { Text("检查并修复所有书籍数据，包括封面、页数、标题、作者等") },
+                leadingContent = {
+                    Icon(
+                        Icons.Default.Build,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp)
+                    )
+                },
+                trailingContent = {
+                    if (uiState.isRepairing) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        TextButton(
+                            onClick = { viewModel.onEvent(SettingsEvent.RepairBookData) }
+                        ) {
+                            Text("修复")
+                        }
+                    }
+                }
+            )
+
+            HorizontalDivider()
+
             Spacer(modifier = Modifier.weight(1f))
         }
 
@@ -166,7 +194,64 @@ fun ShelfSettingsScreen(
                 }
             )
         }
+
+        if (uiState.showRepairResultDialog) {
+            RepairResultDialog(
+                results = uiState.repairResults,
+                onDismiss = { viewModel.onEvent(SettingsEvent.DismissRepairResultDialog) }
+            )
+        }
     }
+}
+
+@Composable
+private fun RepairResultDialog(
+    results: List<com.tagfile.app.domain.model.RepairResult>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = { Text("修复结果（共 ${results.size} 项）") },
+        text = {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+            ) {
+                items(results) { result ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFF5F5F5)
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = result.bookTitle,
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            result.fixes.forEach { fix ->
+                                Text(
+                                    text = fix,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF666666),
+                                    modifier = Modifier.padding(start = 8.dp, top = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("确定")
+            }
+        }
+    )
 }
 
 private fun contentUriToRealPath(uri: Uri): String {

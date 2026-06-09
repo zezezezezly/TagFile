@@ -28,7 +28,9 @@ data class BookDetailUiState(
     val newTagName: String = "",
     val newTagColorIndex: Int = 0,
     val showScoreEditor: Boolean = false,
-    val editScoreText: String = ""
+    val editScoreText: String = "",
+    val showAuthorEditor: Boolean = false,
+    val editAuthorName: String = ""
 )
 
 @HiltViewModel
@@ -221,6 +223,43 @@ class BookDetailViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(isSaving = false, message = "保存失败: ${e.message}")
+                }
+            }
+        }
+    }
+
+    // ==================== 作者编辑 ====================
+
+    fun showAuthorEditor() {
+        val book = _uiState.value.book ?: return
+        _uiState.update {
+            it.copy(showAuthorEditor = true, editAuthorName = book.author ?: "")
+        }
+    }
+
+    fun dismissAuthorEditor() {
+        _uiState.update { it.copy(showAuthorEditor = false) }
+    }
+
+    fun onAuthorNameChanged(value: String) {
+        _uiState.update { it.copy(editAuthorName = value) }
+    }
+
+    fun saveAuthor() {
+        val book = _uiState.value.book ?: return
+        val newAuthor = _uiState.value.editAuthorName.trim().ifBlank { null }
+
+        _uiState.update { it.copy(isSaving = true) }
+        viewModelScope.launch {
+            try {
+                shelfRepository.updateBookAuthor(book.id, newAuthor)
+                val updated = book.copy(author = newAuthor)
+                _uiState.update {
+                    it.copy(book = updated, isSaving = false, showAuthorEditor = false, message = "作者已更新")
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isSaving = false, message = "修改失败: ${e.message}")
                 }
             }
         }

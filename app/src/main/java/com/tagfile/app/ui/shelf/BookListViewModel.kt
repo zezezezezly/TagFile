@@ -29,7 +29,9 @@ class BookListViewModel @Inject constructor(
     init {
         val query = savedStateHandle.get<String>("query") ?: ""
         val mode = savedStateHandle.get<String>("mode") ?: "TITLE"
-        _uiState.update { it.copy(query = query, searchMode = mode) }
+        val sortModeStr = savedStateHandle.get<String>("sortMode") ?: "TITLE"
+        val initialSortMode = try { BookSortMode.valueOf(sortModeStr) } catch (_: Exception) { BookSortMode.TITLE }
+        _uiState.update { it.copy(query = query, searchMode = mode, sortMode = initialSortMode) }
 
         if (query.isBlank()) {
             loadAllBooks()
@@ -39,11 +41,26 @@ class BookListViewModel @Inject constructor(
     }
 
     fun changeSortMode(sortMode: BookSortMode) {
-        _uiState.update { it.copy(sortMode = sortMode, books = applySort(rawBooks, sortMode, it.sortAscending)) }
+        _uiState.update {
+            val sorted = applySort(rawBooks, sortMode, it.sortAscending)
+            it.copy(sortMode = sortMode, books = sorted, authorGroups = buildAuthorGroups(sorted, it.sortAscending), expandedAuthors = emptySet())
+        }
     }
 
     fun toggleSortOrder() {
-        _uiState.update { it.copy(sortAscending = !it.sortAscending, books = applySort(rawBooks, it.sortMode, !it.sortAscending)) }
+        _uiState.update {
+            val ascending = !it.sortAscending
+            val sorted = applySort(rawBooks, it.sortMode, ascending)
+            it.copy(sortAscending = ascending, books = sorted, authorGroups = buildAuthorGroups(sorted, ascending))
+        }
+    }
+
+    fun toggleAuthorExpanded(author: String) {
+        _uiState.update {
+            val expanded = it.expandedAuthors.toMutableSet()
+            if (expanded.contains(author)) expanded.remove(author) else expanded.add(author)
+            it.copy(expandedAuthors = expanded)
+        }
     }
 
     private fun loadAllBooks() {
@@ -52,7 +69,9 @@ class BookListViewModel @Inject constructor(
         booksJob = viewModelScope.launch {
             shelfRepository.getAllBooks().collect { books ->
                 rawBooks = books
-                _uiState.update { it.copy(books = applySort(books, _uiState.value.sortMode, _uiState.value.sortAscending), isLoading = false) }
+                val state = _uiState.value
+                val sorted = applySort(books, state.sortMode, state.sortAscending)
+                _uiState.update { it.copy(books = sorted, authorGroups = buildAuthorGroups(sorted, state.sortAscending), isLoading = false) }
             }
         }
     }
@@ -64,7 +83,9 @@ class BookListViewModel @Inject constructor(
         booksJob = viewModelScope.launch {
             shelfRepository.searchBooks(query, searchMode).collect { results ->
                 rawBooks = results
-                _uiState.update { it.copy(books = applySort(results, _uiState.value.sortMode, _uiState.value.sortAscending), isLoading = false) }
+                val state = _uiState.value
+                val sorted = applySort(results, state.sortMode, state.sortAscending)
+                _uiState.update { it.copy(books = sorted, authorGroups = buildAuthorGroups(sorted, state.sortAscending), isLoading = false) }
             }
         }
     }
@@ -78,5 +99,15 @@ class BookListViewModel @Inject constructor(
             BookSortMode.SCORE -> books.sortedByDescending { it.score }
         }
         return if (ascending) sorted else sorted.reversed()
+    }
+
+    private fun buildAuthorGroups(books: List<Book>, ascending: Boolean): List<AuthorGroup> {
+        val grouped = books.groupBy { it.author?.ifBlank { null } }
+        val known = grouped.filterKeys { it != null }
+            .map { (author, authorBooks) -> AuthorGroup(author!!, authorBooks) }
+            .sortedBy { it.author.lowercase() }
+        val unknown = grouped[null]?.let { listOf(AuthorGroup("未知作者", it)) } ?: emptyList()
+        val ordered = if (ascending) known + unknown else known.reversed() + unknown
+        return ordered
     }
 }

@@ -10,13 +10,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -102,18 +106,27 @@ fun BookListScreen(
                     }
                 }
                 else -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(3),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(uiState.books, key = { it.id }) { book ->
-                            BookGridCard(
-                                book = book,
-                                onClick = { onNavigateToBookDetail(book.id) }
-                            )
+                    if (uiState.sortMode == BookSortMode.AUTHOR) {
+                        AuthorListView(
+                            authorGroups = uiState.authorGroups,
+                            expandedAuthors = uiState.expandedAuthors,
+                            onToggleExpand = { viewModel.toggleAuthorExpanded(it) },
+                            onBookClick = { onNavigateToBookDetail(it.id) }
+                        )
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(uiState.books, key = { it.id }) { book ->
+                                BookGridCard(
+                                    book = book,
+                                    onClick = { onNavigateToBookDetail(book.id) }
+                                )
+                            }
                         }
                     }
                 }
@@ -182,6 +195,93 @@ private fun SortPanel(
                         color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuthorListView(
+    authorGroups: List<AuthorGroup>,
+    expandedAuthors: Set<String>,
+    onToggleExpand: (String) -> Unit,
+    onBookClick: (Book) -> Unit
+) {
+    LazyColumn(
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        items(authorGroups, key = { it.author }) { group ->
+            val isExpanded = expandedAuthors.contains(group.author)
+            Column {
+                // 作者头部
+                Surface(
+                    onClick = { onToggleExpand(group.author) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown
+                                else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = if (isExpanded) "收起" else "展开",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = group.author,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "${group.books.size}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                HorizontalDivider()
+
+                // 展开的作品列表（3列网格）
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                    exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut()
+                ) {
+                    val books = group.books
+                    val rows = books.chunked(3)
+                    Column(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        rows.forEach { rowBooks ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                rowBooks.forEach { book ->
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        BookGridCard(
+                                            book = book,
+                                            onClick = { onBookClick(book) }
+                                        )
+                                    }
+                                }
+                                // 补齐空位，保持布局对齐
+                                repeat(3 - rowBooks.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

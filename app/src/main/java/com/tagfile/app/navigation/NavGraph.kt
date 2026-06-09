@@ -51,7 +51,7 @@ object Routes {
     const val FILTER_SETTINGS = "filter_settings/{filterId}"
     const val SHELF = "shelf"
     const val SHELF_SETTINGS = "shelf_settings"
-    const val BOOK_LIST = "book_list?query={query}&mode={mode}"
+    const val BOOK_LIST = "book_list?query={query}&mode={mode}&sortMode={sortMode}"
     const val BOOK_DETAIL = "book_detail/{bookId}"
     const val BOOK_VIEWER = "book_viewer/{bookId}"
 
@@ -64,8 +64,8 @@ object Routes {
     fun filterSettings(filterId: Long = -1L) = "filter_settings/$filterId"
     fun bookViewer(bookId: Long) = "book_viewer/$bookId"
     fun bookDetail(bookId: Long) = "book_detail/$bookId"
-    fun bookList(query: String = "", mode: String = "TITLE") =
-        "book_list?query=${android.net.Uri.encode(query)}&mode=${android.net.Uri.encode(mode)}"
+    fun bookList(query: String = "", mode: String = "TITLE", sortMode: String = "TITLE") =
+        "book_list?query=${android.net.Uri.encode(query)}&mode=${android.net.Uri.encode(mode)}&sortMode=${android.net.Uri.encode(sortMode)}"
 }
 
 @Composable
@@ -289,7 +289,8 @@ fun NavGraph(navController: NavHostController) {
             route = Routes.BOOK_LIST,
             arguments = listOf(
                 navArgument("query") { type = NavType.StringType; defaultValue = "" },
-                navArgument("mode") { type = NavType.StringType; defaultValue = "TITLE" }
+                navArgument("mode") { type = NavType.StringType; defaultValue = "TITLE" },
+                navArgument("sortMode") { type = NavType.StringType; defaultValue = "TITLE" }
             )
         ) {
             BookListScreen(
@@ -310,6 +311,9 @@ fun NavGraph(navController: NavHostController) {
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToRead = { bookId ->
                     navController.navigate(Routes.bookViewer(bookId))
+                },
+                onNavigateToAuthor = { author ->
+                    navController.navigate(Routes.bookList(author, "AUTHOR", "AUTHOR"))
                 }
             )
         }

@@ -8,6 +8,7 @@ import com.tagfile.app.data.local.entity.FileTagCrossRefEntity
 import com.tagfile.app.data.local.entity.TagEntity
 import com.tagfile.app.data.mapper.EntityMapper.toDomain
 import com.tagfile.app.domain.model.Book
+import com.tagfile.app.domain.model.RepairResult
 import com.tagfile.app.domain.model.Tag
 import com.tagfile.app.domain.repository.SearchMode
 import com.tagfile.app.domain.repository.ShelfRepository
@@ -66,9 +67,16 @@ class ShelfRepositoryImpl @Inject constructor(
             val existing = bookDao.getByFolderPath(subDir.absolutePath)
             if (existing != null) {
                 scannedPaths.add(subDir.absolutePath)
+                var updated = existing
                 val freshTags = collectBookTags(subDir.absolutePath)
                 if (existing.tags != freshTags) {
-                    bookDao.update(existing.copy(tags = freshTags))
+                    updated = updated.copy(tags = freshTags)
+                }
+                if (existing.author == null && inheritedAuthor != null) {
+                    updated = updated.copy(author = inheritedAuthor)
+                }
+                if (updated != existing) {
+                    bookDao.update(updated)
                 }
                 continue
             }
@@ -81,7 +89,7 @@ class ShelfRepositoryImpl @Inject constructor(
 
             if (imageFiles.isNotEmpty() && childDirs.isEmpty()) {
                 val name = subDir.name
-                val authorPattern = Regex("""^[\[［](.+?)[\]］]\s*(.*)""")
+                val authorPattern = Regex("""^[\[［](.+?)[]］]\s*(.*)""")
                 val match = authorPattern.find(name)
                 val ownAuthor = match?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }
                 val title = match?.groupValues?.getOrNull(2)?.takeIf { it.isNotBlank() } ?: name
@@ -101,7 +109,7 @@ class ShelfRepositoryImpl @Inject constructor(
                 newBooks.add(entity.toDomain())
                 scannedPaths.add(subDir.absolutePath)
             } else {
-                val authorPattern = Regex("""^[\[［](.+?)[\]］]\s*(.*)""")
+                val authorPattern = Regex("""^[\[［](.+?)[]］]\s*(.*)""")
                 val match = authorPattern.find(subDir.name)
                 val ownAuthor = match?.groupValues?.getOrNull(1)?.takeIf { it.isNotBlank() }
                 val nextAuthor = ownAuthor ?: inheritedAuthor
@@ -208,5 +216,143 @@ class ShelfRepositoryImpl @Inject constructor(
 
     override suspend fun createBookTag(name: String, color: Int): Long {
         return tagDao.insert(TagEntity(name = name, color = color))
+    }
+
+    override suspend fun updateBookAuthor(id: Long, author: String?) {
+        val book = bookDao.getById(id) ?: return
+        val oldFolder = File(book.folderPath)
+        val parentDir = oldFolder.parentFile ?: return
+        val oldName = oldFolder.name
+
+        // 解析现有作者
+    val authorPattern = Regex("""^[\[［](.+?)[]］]\s*(.*)""")
+        val (_, titlePart) = authorPattern.find(oldName)?.let { match ->
+            val authorPart = match.groupValues[1].trim()
+            val title = match.groupValues[2].trim().takeIf { it.isNotBlank() } ?: oldName
+            authorPart to title
+        } ?: ("" to oldName)
+
+        // 构造新文件夹名
+        val newName = if (!author.isNullOrBlank()) {
+            "[$author] $titlePart".trim()
+        } else {
+            titlePart
+        }
+
+        // 重命名文件夹
+        if (oldName != newName) {
+            val newFolder = File(parentDir, newName)
+            oldFolder.renameTo(newFolder)
+        }
+
+        // 更新数据库
+        val newFolderPath = if (oldName != newName) {
+            File(parentDir, newName).absolutePath
+        } else {
+            book.folderPath
+        }
+
+        // 封面路径也需要更新（封面文件随文件夹一起移动）
+        val newCoverPath = if (oldName != newName && oldFolder.absolutePath.isNotEmpty()) {
+            val coverFile = File(book.coverPath)
+            val relativeCover = coverFile.name
+            File(parentDir, "$newName/$relativeCover").absolutePath
+        } else {
+            book.coverPath
+        }
+
+        val updated = book.copy(author = author, folderPath = newFolderPath, coverPath = newCoverPath)
+        bookDao.update(updated)
+    }
+
+    override suspend fun repairBookData(): List<RepairResult> {
+        val books = bookDao.getAllList().map { it.toDomain() }
+        val results = mutableListOf<RepairResult>()
+        val imageExtensions = setOf("jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif")
+        val authorPattern = Regex("""^[\[［](.+?)[]］]\s*(.*)""")
+
+        // 场景7：重复书籍检测
+        val seen = mutableMapOf<String, Long>()
+        val duplicatesToDelete = mutableListOf<Long>()
+        for (book in books) {
+            if (book.folderPath in seen) {
+                val existingId = seen[book.folderPath]!!
+                val olderId = minOf(existingId, book.id)
+                if (olderId != book.id) {
+                    duplicatesToDelete.add(book.id)
+                } else {
+                    duplicatesToDelete.add(existingId)
+                    seen[book.folderPath] = book.id
+                }
+            } else {
+                seen[book.folderPath] = book.id
+            }
+        }
+
+        for (dupId in duplicatesToDelete) {
+            val dup = books.find { it.id == dupId } ?: continue
+            bookDao.deleteById(dupId)
+            results.add(RepairResult(bookId = dupId, bookTitle = dup.title, fixes = listOf("已删除重复记录"), hasIssues = true))
+        }
+
+        val validBooks = books.filter { it.id !in duplicatesToDelete }
+
+        for (book in validBooks) {
+            val folder = File(book.folderPath)
+            if (!folder.exists() || !folder.isDirectory) continue
+
+            val fixes = mutableListOf<String>()
+            var updatedBook = book
+
+            // 场景5：检查文件夹名 → 标题
+            val folderName = folder.name
+            val match = authorPattern.find(folderName)
+            val expectedTitle = if (match != null) {
+                match.groupValues[2].trim().takeIf { it.isNotBlank() } ?: folderName
+            } else {
+                folderName
+            }
+
+            if (expectedTitle != book.title) {
+                fixes.add("标题已修正: \"${book.title}\" → \"$expectedTitle\"")
+                updatedBook = updatedBook.copy(title = expectedTitle)
+            }
+
+            // 场景3：页数检查
+            val imageFiles = folder.listFiles { f ->
+                f.isFile && f.extension.lowercase() in imageExtensions
+            }?.sortedBy { it.name } ?: emptyList()
+
+            if (imageFiles.size != book.pageCount) {
+                fixes.add("页数已修正: ${book.pageCount} → ${imageFiles.size}")
+                updatedBook = updatedBook.copy(pageCount = imageFiles.size)
+            }
+
+            // 场景1+2：封面路径检查
+            val coverFile = File(book.coverPath)
+            val coverExists = coverFile.exists()
+            if (!coverExists && imageFiles.isNotEmpty()) {
+                val newCoverPath = imageFiles.first().absolutePath
+                fixes.add("封面已更新")
+                updatedBook = updatedBook.copy(coverPath = newCoverPath)
+            }
+
+            // 保存修改
+            if (fixes.isNotEmpty()) {
+                val entity = BookEntity(
+                    id = updatedBook.id, title = updatedBook.title,
+                    author = updatedBook.author, tags = updatedBook.tags,
+                    coverPath = updatedBook.coverPath, folderPath = updatedBook.folderPath,
+                    pageCount = updatedBook.pageCount, viewCount = updatedBook.viewCount,
+                    totalDuration = updatedBook.totalDuration, description = updatedBook.description,
+                    score = updatedBook.score, lastReadTime = updatedBook.lastReadTime,
+                    createdAt = updatedBook.createdAt
+                )
+                bookDao.update(entity)
+                results.add(RepairResult(bookId = book.id, bookTitle = expectedTitle, fixes = fixes, hasIssues = true))
+            }
+        }
+
+        return results
     }
 }

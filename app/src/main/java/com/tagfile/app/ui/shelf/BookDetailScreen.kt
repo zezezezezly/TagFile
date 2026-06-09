@@ -41,7 +41,8 @@ import java.io.File
 fun BookDetailScreen(
     viewModel: BookDetailViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
-    onNavigateToRead: (Long) -> Unit = {}
+    onNavigateToRead: (Long) -> Unit = {},
+    onNavigateToAuthor: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -125,11 +126,56 @@ fun BookDetailScreen(
 
                             if (book.author != null) {
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = book.author,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = book.author,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { onNavigateToAuthor(book.author) }
+                                    )
+                                    IconButton(
+                                        onClick = { viewModel.showAuthorEditor() },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Edit,
+                                            contentDescription = "编辑作者",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = "未知作者",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { onNavigateToAuthor("未知作者") }
+                                    )
+                                    IconButton(
+                                        onClick = { viewModel.showAuthorEditor() },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Edit,
+                                            contentDescription = "编辑作者",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -150,7 +196,7 @@ fun BookDetailScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    text = if (book.score > 0f) String.format("%.1f", book.score) else "0.0",
+                                    text = if (book.score > 0f) String.format(java.util.Locale.getDefault(), "%.1f", book.score) else "0.0",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFE65100)
@@ -396,6 +442,23 @@ fun BookDetailScreen(
             onConfirm = { viewModel.saveScore() }
         )
     }
+
+    if (uiState.showAuthorEditor) {
+        uiState.book?.let { book ->
+            val authorPattern = Regex("""^[\[［](.+?)[]］]\s*(.*)""")
+            val titlePart = authorPattern.find(File(book.folderPath).name)?.let { match ->
+                match.groupValues[2].trim().takeIf { it.isNotBlank() }
+            } ?: File(book.folderPath).name
+
+            AuthorEditDialog(
+                titlePart = titlePart,
+                authorName = uiState.editAuthorName,
+                onAuthorNameChanged = { viewModel.onAuthorNameChanged(it) },
+                onDismiss = { viewModel.dismissAuthorEditor() },
+                onConfirm = { viewModel.saveAuthor() }
+            )
+        }
+    }
 }
 
 @Composable
@@ -562,6 +625,54 @@ private fun TagSelectDialog(
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text("保存")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+@Composable
+private fun AuthorEditDialog(
+    titlePart: String,
+    authorName: String,
+    onAuthorNameChanged: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = { Text("修改作者") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // 文件夹名预览
+                Text(
+                    text = "[${authorName.ifBlank { "______" }}] $titlePart",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                OutlinedTextField(
+                    value = authorName,
+                    onValueChange = onAuthorNameChanged,
+                    placeholder = { Text("输入作者名") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("作者") }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("确定")
             }
         },
         dismissButton = {

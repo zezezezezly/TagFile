@@ -98,6 +98,10 @@ class SettingsViewModel @Inject constructor(
                     importDatabase(content, event.isReplace)
                 }
             }
+
+            is SettingsEvent.RepairBookData -> repairBookData()
+            is SettingsEvent.DismissRepairResultDialog ->
+                _uiState.update { it.copy(showRepairResultDialog = false) }
         }
     }
 
@@ -248,6 +252,36 @@ class SettingsViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(isScanningShelf = false, message = "扫描失败: ${e.message}")
+                }
+            }
+        }
+    }
+
+    private fun repairBookData() {
+        _uiState.update { it.copy(isRepairing = true) }
+        viewModelScope.launch {
+            try {
+                val results = withContext(Dispatchers.IO) {
+                    shelfRepository.repairBookData()
+                }
+                val issueCount = results.size
+                if (issueCount == 0) {
+                    _uiState.update {
+                        it.copy(isRepairing = false, message = "所有书籍数据正常，无需修复")
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isRepairing = false,
+                            showRepairResultDialog = true,
+                            repairResults = results,
+                            message = "已修复 $issueCount 本书籍"
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isRepairing = false, message = "修复失败: ${e.message}")
                 }
             }
         }

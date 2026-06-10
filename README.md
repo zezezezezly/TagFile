@@ -38,6 +38,7 @@ Android 标签化文件管理器 | Android Tag-based File Manager
 - Daily random recommendations
 - 阅读统计：浏览次数、累计阅读时长
 - Reading statistics: view count, total reading duration
+<img width="30%" alt="85497fd070a9dfdc0baaa544b305e74b" src="https://github.com/user-attachments/assets/e55f4dd7-544e-4d49-8b57-74c4c4c00a52" />
 
 ### 图像增强 | Image Enhancement
 - Anime4K 风格 GPU 加速图像增强（OpenGL ES 2.0）
@@ -48,6 +49,9 @@ Android 标签化文件管理器 | Android Tag-based File Manager
 - Filter preset library: create, edit, enable management
 - 增强前后对比预览
 - Before/after comparison preview
+
+<img width="30%" alt="393f7875530aa454117b4af23f22b4bc" src="https://github.com/user-attachments/assets/b6465dbc-a1a3-421e-a991-0bae37300c34" /><img width="30%" alt="0fe051da91a2dbc07ef5d090ad40af1d" src="https://github.com/user-attachments/assets/f278e4d4-1b54-405a-82d2-94bf62610d1d" />
+
 
 ### 搜索与筛选 | Search & Filter
 - 文件名关键词实时搜索（防抖）
@@ -78,7 +82,7 @@ Android 标签化文件管理器 | Android Tag-based File Manager
 - Custom text color / icon color
 - 文字描边开关与颜色
 - Text stroke toggle and color
-
+<img width="30%" alt="272557c9a1abdd8cad00b0aeea62ef33" src="https://github.com/user-attachments/assets/7588b2fc-478a-4473-b383-99e7c2b56843" />
 ---
 
 ## 技术栈 | Tech Stack

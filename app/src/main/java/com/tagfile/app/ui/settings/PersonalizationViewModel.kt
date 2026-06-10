@@ -23,18 +23,13 @@ import javax.inject.Inject
 data class PersonalizationUiState(
     val wallpaperPath: String? = null,
     val wallpaperOpacity: Float = 0.15f,
-    val textColor: Int = Color.WHITE,
-    val iconColor: Int = Color.parseColor("#FF6200EE"),
     val strokeEnabled: Boolean = false,
     val strokeColor: Int = Color.BLACK
 )
 
 sealed class PersonalizationEvent {
     data class UpdateWallpaperOpacity(val value: Float) : PersonalizationEvent()
-    data class SelectWallpaper(val path: String) : PersonalizationEvent()
     object RemoveWallpaper : PersonalizationEvent()
-    data class UpdateTextColor(val color: Int) : PersonalizationEvent()
-    data class UpdateIconColor(val color: Int) : PersonalizationEvent()
     object ToggleStroke : PersonalizationEvent()
     data class UpdateStrokeColor(val color: Int) : PersonalizationEvent()
 }
@@ -50,8 +45,6 @@ class PersonalizationViewModel @Inject constructor(
         PersonalizationUiState(
             wallpaperPath = wallpaperPreferences.wallpaperPath.value,
             wallpaperOpacity = wallpaperPreferences.wallpaperOpacity.value,
-            textColor = appearancePreferences.customTextColor.value,
-            iconColor = appearancePreferences.customIconColor.value,
             strokeEnabled = appearancePreferences.strokeEnabled.value,
             strokeColor = appearancePreferences.strokeColor.value
         )
@@ -64,24 +57,9 @@ class PersonalizationViewModel @Inject constructor(
                 _uiState.update { it.copy(wallpaperOpacity = event.value) }
                 wallpaperPreferences.setWallpaperOpacity(event.value)
             }
-            is PersonalizationEvent.SelectWallpaper -> {
-                viewModelScope.launch {
-                    val savedPath = copyWallpaperToInternal(event.path)
-                    _uiState.update { it.copy(wallpaperPath = savedPath) }
-                    wallpaperPreferences.setWallpaperPath(savedPath)
-                }
-            }
             is PersonalizationEvent.RemoveWallpaper -> {
                 _uiState.update { it.copy(wallpaperPath = null) }
                 wallpaperPreferences.setWallpaperPath(null)
-            }
-            is PersonalizationEvent.UpdateTextColor -> {
-                _uiState.update { it.copy(textColor = event.color) }
-                appearancePreferences.setCustomTextColor(event.color)
-            }
-            is PersonalizationEvent.UpdateIconColor -> {
-                _uiState.update { it.copy(iconColor = event.color) }
-                appearancePreferences.setCustomIconColor(event.color)
             }
             is PersonalizationEvent.ToggleStroke -> {
                 val newValue = !_uiState.value.strokeEnabled

@@ -302,7 +302,6 @@ fun FileListScreen(
     if (uiState.showTagSelector) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(FileListEvent.HideTagSelector) },
-            containerColor = Color.White,
             title = { Text("添加标签") },
             text = {
                 Column {
@@ -361,7 +360,6 @@ fun FileListScreen(
     if (uiState.showRemoveTagSelector) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(FileListEvent.HideRemoveTagSelector) },
-            containerColor = Color.White,
             title = { Text("取消标签") },
             text = {
                 Column {

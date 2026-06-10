@@ -19,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 enum class SortOption(val label: String) {
@@ -36,8 +35,7 @@ fun SortBottomSheet(
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = Color.White
+        onDismissRequest = onDismiss
     ) {
         Column(modifier = Modifier.padding(bottom = 32.dp)) {
             Text(

@@ -3,7 +3,9 @@ package com.tagfile.app.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -18,19 +20,71 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.tagfile.app.data.preferences.AppearancePreferences
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+// 分级圆角：大16dp / 中12dp / 小8dp
+val AppShapes = Shapes(
+    extraLarge = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(16.dp),
+    medium = RoundedCornerShape(12.dp),
+    small = RoundedCornerShape(8.dp),
+    extraSmall = RoundedCornerShape(8.dp)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = Primary,
+    onPrimary = OnPrimary,
+    primaryContainer = Primary.copy(alpha = 0.12f),
+    onPrimaryContainer = PrimaryVariant,
+    secondary = PrimaryVariant,
+    onSecondary = OnPrimary,
+    background = BackgroundLight,
+    onBackground = OnBackgroundLight,
+    surface = SurfaceLight,
+    onSurface = OnBackgroundLight,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    outline = OnSurfaceVariantLight.copy(alpha = 0.2f),
+    outlineVariant = OnSurfaceVariantLight.copy(alpha = 0.1f),
+    error = Color(0xFFC62828),
+    onError = OnPrimary,
+    surfaceContainerLowest = SurfaceLight,
+    surfaceContainerLow = SurfaceVariantLight,
+    surfaceContainer = SurfaceVariantLight,
+    surfaceContainerHigh = Color(0xFFE0DCD6),
+    surfaceContainerHighest = Color(0xFFD8D4CE),
+    surfaceDim = Color(0xFFD0CCC6),
+    surfaceBright = SurfaceLight,
+    surfaceTint = Primary.copy(alpha = 0.05f)
+)
+
+private val DarkColorScheme = darkColorScheme(
+    primary = Color(0xFF4DB6AC),
+    onPrimary = PrimaryVariant,
+    primaryContainer = Color(0xFF4DB6AC).copy(alpha = 0.12f),
+    onPrimaryContainer = Color(0xFFB2DFDB),
+    secondary = Color(0xFF80CBC4),
+    onSecondary = PrimaryVariant,
+    background = BackgroundDark,
+    onBackground = OnBackgroundDark,
+    surface = SurfaceDark,
+    onSurface = OnBackgroundDark,
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    outline = OnSurfaceVariantDark.copy(alpha = 0.2f),
+    outlineVariant = OnSurfaceVariantDark.copy(alpha = 0.1f),
+    error = Color(0xFFEF5350),
+    onError = OnPrimary,
+    surfaceContainerLowest = Color(0xFF15171A),
+    surfaceContainerLow = SurfaceDark,
+    surfaceContainer = SurfaceDark,
+    surfaceContainerHigh = Color(0xFF282A2C),
+    surfaceContainerHighest = Color(0xFF2C2F30),
+    surfaceDim = Color(0xFF101214),
+    surfaceBright = Color(0xFF303336),
+    surfaceTint = Color(0xFF4DB6AC).copy(alpha = 0.05f)
 )
 
 @Composable
@@ -49,21 +103,36 @@ fun TagFileTheme(
         else -> LightColorScheme
     }
 
-    val customTextColor by appearancePreferences.customTextColor.collectAsState()
-    val customIconColor by appearancePreferences.customIconColor.collectAsState()
     val strokeEnabled by appearancePreferences.strokeEnabled.collectAsState()
     val strokeColorInt by appearancePreferences.strokeColor.collectAsState()
 
-    val textColor = Color(customTextColor)
-    val iconColor = Color(customIconColor)
+    val hasWallpaper by appearancePreferences.hasWallpaper.collectAsState()
+    val wallpaperOpacity by appearancePreferences.wallpaperOpacity.collectAsState()
+
     val strokeColor = Color(strokeColorInt)
 
-    val colorScheme = baseScheme.copy(
-        onBackground = textColor,
-        onSurface = textColor,
-        onSurfaceVariant = textColor.copy(alpha = 0.7f),
-        primary = iconColor
-    )
+    val colorScheme = if (hasWallpaper) {
+        // 有壁纸时：背景半透明，文字根据壁纸自动适应
+        val isDarkWallpaper = darkTheme
+        val textColor = if (isDarkWallpaper) OnBackgroundDark else OnBackgroundLight
+        baseScheme.copy(
+            background = baseScheme.background.copy(alpha = 1f - wallpaperOpacity * 0.85f),
+            surface = baseScheme.surface.copy(alpha = 1f - wallpaperOpacity * 0.85f),
+            surfaceVariant = baseScheme.surfaceVariant.copy(alpha = 1f - wallpaperOpacity * 0.85f),
+            surfaceContainerLowest = baseScheme.surfaceContainerLowest.copy(alpha = 1f - wallpaperOpacity * 0.85f),
+            surfaceContainerLow = baseScheme.surfaceContainerLow.copy(alpha = 1f - wallpaperOpacity * 0.85f),
+            surfaceContainer = baseScheme.surfaceContainer.copy(alpha = 1f - wallpaperOpacity * 0.85f),
+            surfaceContainerHigh = baseScheme.surfaceContainerHigh.copy(alpha = 1f - wallpaperOpacity * 0.85f),
+            surfaceContainerHighest = baseScheme.surfaceContainerHighest.copy(alpha = 1f - wallpaperOpacity * 0.85f),
+            surfaceDim = baseScheme.surfaceDim.copy(alpha = 1f - wallpaperOpacity * 0.85f),
+            surfaceBright = baseScheme.surfaceBright.copy(alpha = 1f - wallpaperOpacity * 0.85f),
+            onBackground = textColor,
+            onSurface = textColor,
+            onSurfaceVariant = textColor.copy(alpha = 0.7f)
+        )
+    } else {
+        baseScheme
+    }
 
     val typography = if (strokeEnabled) {
         val s = Shadow(color = strokeColor, offset = Offset.Zero, blurRadius = 2f)
@@ -92,12 +161,12 @@ fun TagFileTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            val controller = WindowCompat.getInsetsController(window, view)
             if (darkTheme) {
-                window.statusBarColor = android.graphics.Color.TRANSPARENT
-                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+                controller.isAppearanceLightStatusBars = false
             } else {
-                window.statusBarColor = android.graphics.Color.TRANSPARENT
-                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+                controller.isAppearanceLightStatusBars = true
             }
         }
     }
@@ -105,6 +174,7 @@ fun TagFileTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = typography,
+        shapes = AppShapes,
         content = content
     )
 }

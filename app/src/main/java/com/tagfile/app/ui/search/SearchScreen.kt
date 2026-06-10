@@ -406,7 +406,6 @@ fun SearchScreen(
     if (uiState.showTagSelector) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(SearchEvent.HideTagSelector) },
-            containerColor = Color.White,
             title = { Text("添加标签") },
             text = {
                 Column {
@@ -465,7 +464,6 @@ fun SearchScreen(
     if (uiState.showRemoveTagSelector) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(SearchEvent.HideRemoveTagSelector) },
-            containerColor = Color.White,
             title = { Text("取消标签") },
             text = {
                 Column {
@@ -524,7 +522,6 @@ fun SearchScreen(
     if (uiState.showTagPicker) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(SearchEvent.HideTagPicker) },
-            containerColor = Color.White,
             title = { Text("选择标签") },
             text = {
                 Column {

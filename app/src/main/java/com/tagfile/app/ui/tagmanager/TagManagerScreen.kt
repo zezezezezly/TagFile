@@ -172,7 +172,6 @@ fun TagManagerScreen(
     if (uiState.showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(TagManagerEvent.DismissDeleteConfirm) },
-            containerColor = Color.White,
             title = { Text("删除标签") },
             text = {
                 Text("确定要删除标签「${uiState.deleteTargetTag?.name}」吗？所有文件上的此标签关联将被移除。")

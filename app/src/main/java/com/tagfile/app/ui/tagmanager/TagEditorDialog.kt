@@ -31,7 +31,6 @@ fun TagEditorDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
         title = { Text(if (isEditing) "编辑标签" else "创建标签") },
         text = {
             Column {

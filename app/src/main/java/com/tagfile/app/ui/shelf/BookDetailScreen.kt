@@ -183,7 +183,7 @@ fun BookDetailScreen(
                             Row(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFFFFF3E0))
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
                                     .clickable { viewModel.showScoreEditor() }
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -192,24 +192,24 @@ fun BookDetailScreen(
                                 Icon(
                                     Icons.Default.Star,
                                     contentDescription = null,
-                                    tint = Color(0xFFFFA000),
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
                                     text = if (book.score > 0f) String.format(java.util.Locale.getDefault(), "%.1f", book.score) else "0.0",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFE65100)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "/ 10.0",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Icon(
                                     Icons.Default.Edit,
                                     contentDescription = null,
-                                    tint = Color.Gray,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(14.dp)
                                 )
                             }
@@ -352,7 +352,7 @@ fun BookDetailScreen(
                         ) {
                             tagList.forEach { tagName ->
                                 val tag = allTags.find { it.name == tagName }
-                                val color = tag?.let { Color(it.color) } ?: Color.Gray
+                                val color = tag?.let { Color(it.color) } ?: MaterialTheme.colorScheme.onSurfaceVariant
                                 TagChip(
                                     name = tagName,
                                     color = color,
@@ -470,7 +470,6 @@ private fun ScoreEditDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
         title = { Text("评分") },
         text = {
             Column(
@@ -492,7 +491,7 @@ private fun ScoreEditDialog(
                 Text(
                     text = "取值范围 0.0 ~ 10.0",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         },
@@ -526,7 +525,6 @@ private fun TagSelectDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
         title = { Text("编辑标签") },
         text = {
             Column {
@@ -566,7 +564,7 @@ private fun TagSelectDialog(
                                 .background(color)
                                 .then(
                                     if (index == newTagColorIndex)
-                                        Modifier.border(3.dp, Color.DarkGray, CircleShape)
+                                        Modifier.border(3.dp, MaterialTheme.colorScheme.outline, CircleShape)
                                     else Modifier
                                 )
                                 .clickable { onNewTagColorChanged(index) },
@@ -576,7 +574,7 @@ private fun TagSelectDialog(
                                 Icon(
                                     Icons.Default.Check,
                                     contentDescription = null,
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -593,7 +591,7 @@ private fun TagSelectDialog(
                 if (displayedTags.isEmpty()) {
                     Text(
                         "暂无标签，请在上方添加。",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
                 } else {
@@ -645,7 +643,6 @@ private fun AuthorEditDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
         title = { Text("修改作者") },
         text = {
             Column(
@@ -656,7 +653,7 @@ private fun AuthorEditDialog(
                 Text(
                     text = "[${authorName.ifBlank { "______" }}] $titlePart",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 

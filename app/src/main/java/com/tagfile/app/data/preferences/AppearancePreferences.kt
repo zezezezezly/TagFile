@@ -6,6 +6,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,20 +24,18 @@ class AppearancePreferences @Inject constructor(
         _isDarkMode.value = enabled
     }
 
-    private val _customTextColor = MutableStateFlow(prefs.getInt("custom_text_color", Color.WHITE))
-    val customTextColor: StateFlow<Int> = _customTextColor.asStateFlow()
+    private val _hasWallpaper = MutableStateFlow(
+        prefs.getString("wallpaper_path", null)?.let { File(it).exists() } == true
+    )
+    val hasWallpaper: StateFlow<Boolean> = _hasWallpaper.asStateFlow()
 
-    private val _customIconColor = MutableStateFlow(prefs.getInt("custom_icon_color", Color.parseColor("#FF6200EE")))
-    val customIconColor: StateFlow<Int> = _customIconColor.asStateFlow()
+    private val _wallpaperOpacity = MutableStateFlow(prefs.getFloat("wallpaper_opacity", 0.15f))
+    val wallpaperOpacity: StateFlow<Float> = _wallpaperOpacity.asStateFlow()
 
-    fun setCustomTextColor(color: Int) {
-        prefs.edit().putInt("custom_text_color", color).apply()
-        _customTextColor.value = color
-    }
-
-    fun setCustomIconColor(color: Int) {
-        prefs.edit().putInt("custom_icon_color", color).apply()
-        _customIconColor.value = color
+    fun refreshWallpaper() {
+        val path = prefs.getString("wallpaper_path", null)
+        _hasWallpaper.value = path != null && File(path).exists()
+        _wallpaperOpacity.value = prefs.getFloat("wallpaper_opacity", 0.15f)
     }
 
     private val _strokeEnabled = MutableStateFlow(prefs.getBoolean("stroke_enabled", false))

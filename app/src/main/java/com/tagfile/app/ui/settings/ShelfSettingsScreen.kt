@@ -171,7 +171,6 @@ fun ShelfSettingsScreen(
         if (showResetDialog) {
             AlertDialog(
                 onDismissRequest = { showResetDialog = false },
-                containerColor = Color.White,
                 title = { Text("确认重置") },
                 text = { Text("确定要清空所有书籍数据吗？此操作不可撤销，您需要重新检索书籍。") },
                 confirmButton = {
@@ -211,7 +210,6 @@ private fun RepairResultDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
         title = { Text("修复结果（共 ${results.size} 项）") },
         text = {
             LazyColumn(
@@ -225,7 +223,7 @@ private fun RepairResultDialog(
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFF5F5F5)
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
@@ -237,7 +235,7 @@ private fun RepairResultDialog(
                                 Text(
                                     text = fix,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF666666),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(start = 8.dp, top = 2.dp)
                                 )
                             }

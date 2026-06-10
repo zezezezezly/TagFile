@@ -169,7 +169,7 @@ private fun SortPanel(
 
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 4.dp,
         modifier = Modifier
             .width(140.dp)

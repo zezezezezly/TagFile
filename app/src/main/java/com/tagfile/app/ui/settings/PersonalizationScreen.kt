@@ -31,8 +31,6 @@ fun PersonalizationScreen(
     viewModel: PersonalizationViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var showTextColorPicker by remember { mutableStateOf(false) }
-    var showIconColorPicker by remember { mutableStateOf(false) }
     var showStrokeColorPicker by remember { mutableStateOf(false) }
 
     val wallpaperPickerLauncher = rememberLauncherForActivityResult(
@@ -117,26 +115,6 @@ fun PersonalizationScreen(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            ColorSection(
-                label = "文字颜色",
-                selectedColor = Color(uiState.textColor),
-                expanded = showTextColorPicker,
-                onToggle = { showTextColorPicker = !showTextColorPicker },
-                onColorSelected = { viewModel.onEvent(PersonalizationEvent.UpdateTextColor(it.toArgb())) }
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            ColorSection(
-                label = "图标颜色",
-                selectedColor = Color(uiState.iconColor),
-                expanded = showIconColorPicker,
-                onToggle = { showIconColorPicker = !showIconColorPicker },
-                onColorSelected = { viewModel.onEvent(PersonalizationEvent.UpdateIconColor(it.toArgb())) }
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
             ListItem(
                 headlineContent = { Text("文字描边") },
                 supportingContent = { Text("为所有文字添加描边效果，增强在壁纸上的可读性") },
@@ -161,8 +139,7 @@ fun PersonalizationScreen(
                 Column {
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
-                    ColorSection(
-                        label = "描边颜色",
+                    StrokeColorSection(
                         selectedColor = Color(uiState.strokeColor),
                         expanded = showStrokeColorPicker,
                         onToggle = { showStrokeColorPicker = !showStrokeColorPicker },
@@ -192,8 +169,7 @@ fun PersonalizationScreen(
 }
 
 @Composable
-private fun ColorSection(
-    label: String,
+private fun StrokeColorSection(
     selectedColor: Color,
     expanded: Boolean,
     onToggle: () -> Unit,
@@ -217,7 +193,7 @@ private fun ColorSection(
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    label,
+                    "描边颜色",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )

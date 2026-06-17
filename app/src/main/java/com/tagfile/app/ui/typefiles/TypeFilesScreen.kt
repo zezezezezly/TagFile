@@ -222,7 +222,7 @@ fun TypeFilesScreen(
     }
 
     if (uiState.showTagSelector) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(TypeFilesEvent.HideTagSelector) },
             title = { Text("添加标签") },
             text = {
@@ -270,7 +270,7 @@ fun TypeFilesScreen(
     }
 
     if (uiState.showRemoveTagSelector) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(TypeFilesEvent.HideRemoveTagSelector) },
             title = { Text("取消标签") },
             text = {
@@ -318,7 +318,7 @@ fun TypeFilesScreen(
     }
 
     if (uiState.showRenameDialog) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(TypeFilesEvent.HideRenameDialog) },
             title = { Text("重命名") },
             text = {
@@ -339,7 +339,7 @@ fun TypeFilesScreen(
     }
 
     if (uiState.showDeleteConfirm) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(TypeFilesEvent.DismissDeleteConfirm) },
             title = { Text("删除确认") },
             text = { Text("确定要删除选中的 ${uiState.selectedPaths.size} 个文件吗？") },

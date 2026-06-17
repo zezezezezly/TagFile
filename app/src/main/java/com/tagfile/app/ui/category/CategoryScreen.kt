@@ -384,7 +384,7 @@ fun CategoryScreen(
     }
 
     if (uiState.showTagSelector) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(CategoryEvent.HideTagSelector) },
             title = { Text("添加标签") },
             text = {
@@ -432,7 +432,7 @@ fun CategoryScreen(
     }
 
     if (uiState.showRemoveTagSelector) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(CategoryEvent.HideRemoveTagSelector) },
             title = { Text("取消标签") },
             text = {
@@ -480,7 +480,7 @@ fun CategoryScreen(
     }
 
     if (uiState.showRenameDialog) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(CategoryEvent.HideRenameDialog) },
             title = { Text("重命名") },
             text = {
@@ -501,7 +501,7 @@ fun CategoryScreen(
     }
 
     if (uiState.showDeleteConfirm) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(CategoryEvent.DismissDeleteConfirm) },
             title = { Text("删除确认") },
             text = { Text("确定要删除选中的 ${uiState.selectedPaths.size} 个文件吗？") },

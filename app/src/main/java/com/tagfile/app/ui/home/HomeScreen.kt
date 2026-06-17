@@ -280,13 +280,6 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 DashboardCard(
-                    label = "总文件",
-                    icon = Icons.Default.Folder,
-                    count = { formatCount(uiState.totalFiles) },
-                    modifier = Modifier.weight(1f),
-                    onClick = onNavigateToFiles
-                )
-                DashboardCard(
                     label = "标签数",
                     icon = Icons.AutoMirrored.Filled.Label,
                     count = { formatCount(uiState.totalTags.toLong()) },

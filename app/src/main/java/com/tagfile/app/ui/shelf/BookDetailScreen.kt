@@ -33,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tagfile.app.domain.model.Tag
 import com.tagfile.app.ui.common.GlassCard
+import com.tagfile.app.ui.common.GlassDialog
 import com.tagfile.app.ui.common.TagChip
 import com.tagfile.app.ui.theme.TagColors
 import java.io.File
@@ -494,7 +495,7 @@ private fun ScoreEditDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    AlertDialog(
+    GlassDialog(
         onDismissRequest = onDismiss,
         title = { Text("评分") },
         text = {
@@ -549,7 +550,7 @@ private fun TagSelectDialog(
 ) {
     val displayedTags = allTags.filter { it.id in selectedTagIds }
 
-    AlertDialog(
+    GlassDialog(
         onDismissRequest = onDismiss,
         title = { Text("编辑标签") },
         text = {
@@ -667,7 +668,7 @@ private fun AuthorEditDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    AlertDialog(
+    GlassDialog(
         onDismissRequest = onDismiss,
         title = { Text("修改作者") },
         text = {
@@ -747,7 +748,7 @@ private fun CoverPickerDialog(
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    GlassDialog(
         onDismissRequest = onDismiss,
         confirmButton = {},
         dismissButton = {
@@ -755,8 +756,6 @@ private fun CoverPickerDialog(
                 Text("取消")
             }
         },
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-        shape = RoundedCornerShape(16.dp),
         title = {
             Text("选择封面", fontWeight = FontWeight.Bold)
         },

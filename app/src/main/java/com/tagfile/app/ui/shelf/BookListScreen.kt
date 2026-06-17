@@ -36,6 +36,7 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tagfile.app.domain.model.Book
+import com.tagfile.app.ui.common.GlassCard
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -167,10 +168,8 @@ private fun SortPanel(
         BookSortMode.PAGE_COUNT to "页数"
     )
 
-    Surface(
+    GlassCard(
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 4.dp,
         modifier = Modifier
             .width(140.dp)
             .clip(RoundedCornerShape(12.dp))

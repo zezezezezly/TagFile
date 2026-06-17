@@ -10,5 +10,7 @@ interface SearchRepository {
     suspend fun getRecentFiles(limit: Int = 50): Result<List<FileItem>>
     suspend fun getLargeFiles(minSizeBytes: Long = 50 * 1024 * 1024): Result<List<FileItem>>
     suspend fun getFileCountByExtensions(extensions: List<String>): Long
+    suspend fun getUntaggedFileCount(): Long
+    suspend fun getUntaggedFiles(limit: Int): Result<List<FileItem>>
     suspend fun searchByType(fileType: FileType, limit: Int = 1000): Result<List<FileItem>>
 }

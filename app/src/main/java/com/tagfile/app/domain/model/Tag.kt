@@ -5,6 +5,7 @@ data class Tag(
     val name: String,
     val color: Int,
     val icon: String? = null,
+    val groupName: String? = null,
     val sortOrder: Int = 0,
     val createdAt: Long = System.currentTimeMillis()
 )

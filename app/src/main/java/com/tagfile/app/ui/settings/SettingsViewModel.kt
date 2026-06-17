@@ -10,16 +10,19 @@ import com.tagfile.app.data.export.TagJson
 import com.tagfile.app.data.export.FileIndexJson
 import com.tagfile.app.data.export.FileTagCrossRefJson
 import com.tagfile.app.data.export.FilterPresetJson
+import com.tagfile.app.data.export.TrashJson
 import com.tagfile.app.data.local.dao.BookDao
 import com.tagfile.app.data.local.dao.FileIndexDao
 import com.tagfile.app.data.local.dao.FileTagDao
 import com.tagfile.app.data.local.dao.FilterPresetDao
 import com.tagfile.app.data.local.dao.TagDao
+import com.tagfile.app.data.local.dao.TrashDao
 import com.tagfile.app.data.local.entity.BookEntity
 import com.tagfile.app.data.local.entity.FileIndexEntity
 import com.tagfile.app.data.local.entity.FileTagCrossRefEntity
 import com.tagfile.app.data.local.entity.FilterPresetEntity
 import com.tagfile.app.data.local.entity.TagEntity
+import com.tagfile.app.data.local.entity.TrashEntity
 import com.tagfile.app.data.preferences.AppearancePreferences
 import com.tagfile.app.data.preferences.EnhancePreferences
 import com.tagfile.app.data.preferences.ShelfPreferences
@@ -44,6 +47,7 @@ class SettingsViewModel @Inject constructor(
     private val fileIndexDao: FileIndexDao,
     private val fileTagDao: FileTagDao,
     private val filterPresetDao: FilterPresetDao,
+    private val trashDao: TrashDao,
     private val shelfRepository: ShelfRepository,
     private val appearancePreferences: AppearancePreferences,
     private val enhancePreferences: EnhancePreferences,
@@ -131,11 +135,11 @@ class SettingsViewModel @Inject constructor(
     private suspend fun buildExportJson(): String {
         val books = bookDao.getAllList().map {
             BookJson(it.id, it.title, it.author, it.tags, it.coverPath, it.folderPath,
-                it.pageCount, it.viewCount, it.totalDuration, it.description, it.score,
-                it.lastReadTime, it.createdAt)
+                it.pageCount, it.currentPage, it.viewCount, it.totalDuration,
+                it.description, it.score, it.lastReadTime, it.createdAt)
         }
         val tags = tagDao.getAllList().map {
-            TagJson(it.id, it.name, it.color, it.icon, it.sortOrder, it.createdAt)
+            TagJson(it.id, it.name, it.color, it.icon, it.groupName, it.sortOrder, it.createdAt)
         }
         val fileIndex = fileIndexDao.getAllList().map {
             FileIndexJson(it.path, it.name, it.nameLower, it.isDirectory, it.extension, it.size, it.lastModified)
@@ -147,10 +151,14 @@ class SettingsViewModel @Inject constructor(
             FilterPresetJson(it.id, it.name, it.strength, it.sharpness, it.denoise,
                 it.lineDarkening, it.contrast, it.saturation, it.upscaleFactor, it.createdAt)
         }
+        val trash = trashDao.getAllList().map {
+            TrashJson(it.id, it.originalPath, it.trashPath, it.fileName,
+                it.isDirectory, it.deletedAt, it.fileSize)
+        }
         return Json { prettyPrint = true }.encodeToString(
             DatabaseExport.serializer(),
             DatabaseExport(books = books, tags = tags, fileIndex = fileIndex,
-                fileTagCrossRefs = crossRefs, filterPresets = presets)
+                fileTagCrossRefs = crossRefs, filterPresets = presets, trash = trash)
         )
     }
 
@@ -191,15 +199,18 @@ class SettingsViewModel @Inject constructor(
                         fileIndexDao.deleteAll()
                         bookDao.deleteAll()
                         filterPresetDao.deleteAll()
+                        trashDao.deleteAll()
                     }
                     // 插入（replace 模式全覆盖，merge 模式 INSERT OR REPLACE 按主键覆盖）
                     bookDao.insertAll(export.books.map {
                         BookEntity(it.id, it.title, it.author, it.tags, it.coverPath,
-                            it.folderPath, it.pageCount, it.viewCount, it.totalDuration,
-                            it.description, it.score, it.lastReadTime, it.createdAt)
+                            it.folderPath, it.pageCount, it.currentPage, it.viewCount,
+                            it.totalDuration, it.description, it.score,
+                            it.lastReadTime, it.createdAt)
                     })
                     tagDao.insertAll(export.tags.map {
-                        TagEntity(it.id, it.name, it.color, it.icon, it.sortOrder, it.createdAt)
+                        TagEntity(it.id, it.name, it.color, it.icon, it.groupName,
+                            it.sortOrder, it.createdAt)
                     })
                     fileIndexDao.insertAll(export.fileIndex.map {
                         FileIndexEntity(it.path, it.name, it.nameLower, it.isDirectory,
@@ -211,6 +222,10 @@ class SettingsViewModel @Inject constructor(
                     filterPresetDao.insertAll(export.filterPresets.map {
                         FilterPresetEntity(it.id, it.name, it.strength, it.sharpness, it.denoise,
                             it.lineDarkening, it.contrast, it.saturation, it.upscaleFactor, it.createdAt)
+                    })
+                    trashDao.insertAll(export.trash.map {
+                        TrashEntity(it.id, it.originalPath, it.trashPath, it.fileName,
+                            it.isDirectory, it.deletedAt, it.fileSize)
                     })
                 }
                 val mode = if (isReplace) "替换" else "合并"

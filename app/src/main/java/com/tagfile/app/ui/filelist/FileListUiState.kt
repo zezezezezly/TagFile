@@ -16,6 +16,8 @@ data class FileListUiState(
     val isGridView: Boolean = false,
     val isSelectionMode: Boolean = false,
     val selectedPaths: Set<String> = emptySet(),
+    val isMultiSelectMode: Boolean = false,
+    val selectedFilePaths: Set<String> = emptySet(),
     val showHiddenFiles: Boolean = false,
     val showSortSheet: Boolean = false,
     val showNewFolderDialog: Boolean = false,
@@ -89,4 +91,10 @@ sealed class FileListEvent {
     data class RemoveTagSelectorSearchQueryChanged(val query: String) : FileListEvent()
     data class RemoveTagFromSelectedFiles(val tagId: Long) : FileListEvent()
     object ToggleSelectAll : FileListEvent()
+    object ToggleMultiSelectMode : FileListEvent()
+    object SelectAllFiles : FileListEvent()
+    object BatchDeleteFiles : FileListEvent()
+    data class BatchTagFiles(val tagId: Long) : FileListEvent()
+    data class CopyFileTo(val sourcePath: String, val targetDir: String) : FileListEvent()
+    data class MoveFileTo(val sourcePath: String, val targetDir: String) : FileListEvent()
 }

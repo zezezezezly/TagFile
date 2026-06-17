@@ -1,19 +1,25 @@
 package com.tagfile.app.ui.filelist
 
+import android.content.Context
 import android.os.Environment
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tagfile.app.data.local.dao.TrashDao
+import com.tagfile.app.data.local.entity.TrashEntity
 import com.tagfile.app.domain.repository.TagRepository
 import com.tagfile.app.domain.usecase.BrowseFilesUseCase
 import com.tagfile.app.domain.usecase.FileOperationsUseCase
 import com.tagfile.app.ui.common.SortOption
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,6 +27,8 @@ class FileListViewModel @Inject constructor(
     private val browseFilesUseCase: BrowseFilesUseCase,
     private val fileOperationsUseCase: FileOperationsUseCase,
     private val tagRepository: TagRepository,
+    private val trashDao: TrashDao,
+    @ApplicationContext private val context: Context,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -91,7 +99,7 @@ class FileListViewModel @Inject constructor(
             is FileListEvent.ShowRenameDialog -> {
                 val target = _uiState.value.selectedPaths.firstOrNull()
                 if (target != null) {
-                    val name = java.io.File(target).name
+                    val name = File(target).name
                     _uiState.update { it.copy(showRenameDialog = true, renameTargetPath = target, renameNewName = name) }
                 }
             }
@@ -112,6 +120,17 @@ class FileListViewModel @Inject constructor(
             is FileListEvent.RemoveTagSelectorSearchQueryChanged -> _uiState.update { it.copy(removeTagSelectorSearchQuery = event.query) }
             is FileListEvent.RemoveTagFromSelectedFiles -> removeTagFromSelectedFiles(event.tagId)
             is FileListEvent.ToggleSelectAll -> toggleSelectAll()
+            is FileListEvent.ToggleMultiSelectMode -> _uiState.update {
+                it.copy(isMultiSelectMode = !it.isMultiSelectMode, selectedFilePaths = emptySet())
+            }
+            is FileListEvent.SelectAllFiles -> {
+                val allPaths = _uiState.value.files.map { it.path }.toSet()
+                _uiState.update { it.copy(selectedFilePaths = allPaths) }
+            }
+            is FileListEvent.BatchDeleteFiles -> batchDeleteFiles()
+            is FileListEvent.BatchTagFiles -> batchTagFiles(event.tagId)
+            is FileListEvent.CopyFileTo -> copyFile(event.sourcePath, event.targetDir)
+            is FileListEvent.MoveFileTo -> moveFile(event.sourcePath, event.targetDir)
         }
     }
 
@@ -147,7 +166,7 @@ class FileListViewModel @Inject constructor(
 
     private fun navigateUp(currentPath: String) {
         if (currentPath == rootPath) return
-        val parentFile = java.io.File(currentPath).parentFile
+        val parentFile = File(currentPath).parentFile
         if (parentFile != null) {
             loadFiles(parentFile.absolutePath)
         }
@@ -231,16 +250,45 @@ class FileListViewModel @Inject constructor(
         val paths = _uiState.value.selectedPaths.toList()
         if (paths.isEmpty()) return
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isProcessing = true) }
-            fileOperationsUseCase.deleteFiles(paths)
-                .onSuccess {
-                    _uiState.update { it.copy(showDeleteConfirm = false, isProcessing = false, selectedPaths = emptySet(), isSelectionMode = false, operationMessage = "已删除 ${paths.size} 个文件") }
-                    reloadCurrentDirectory()
+            try {
+                val trashDir = File(context.filesDir, "trash")
+                if (!trashDir.exists()) trashDir.mkdirs()
+
+                paths.forEach { path ->
+                    val file = File(path)
+                    if (file.exists()) {
+                        val trashFile = File(trashDir, "${System.currentTimeMillis()}_${file.name}")
+                        if (file.renameTo(trashFile)) {
+                            trashDao.insert(
+                                TrashEntity(
+                                    originalPath = path,
+                                    trashPath = trashFile.absolutePath,
+                                    fileName = file.name,
+                                    isDirectory = file.isDirectory,
+                                    fileSize = if (file.isDirectory) 0L else file.length()
+                                )
+                            )
+                            tagRepository.deleteAllCrossRefsByFilePath(path)
+                        }
+                    }
                 }
-                .onFailure { e ->
-                    _uiState.update { it.copy(isProcessing = false, operationMessage = "删除失败: ${e.message}") }
+                _uiState.update {
+                    it.copy(
+                        showDeleteConfirm = false,
+                        isProcessing = false,
+                        selectedPaths = emptySet(),
+                        isSelectionMode = false,
+                        operationMessage = "已删除 ${paths.size} 个文件"
+                    )
                 }
+                reloadCurrentDirectory()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isProcessing = false, operationMessage = "删除失败: ${e.message}")
+                }
+            }
         }
     }
 
@@ -280,6 +328,96 @@ class FileListViewModel @Inject constructor(
                 state.copy(selectedPaths = emptySet(), isSelectionMode = false)
             } else {
                 state.copy(selectedPaths = allPaths, isSelectionMode = true)
+            }
+        }
+    }
+
+    private fun batchDeleteFiles() {
+        val paths = _uiState.value.selectedFilePaths.toList()
+        if (paths.isEmpty()) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessing = true) }
+            fileOperationsUseCase.deleteFiles(paths)
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            isProcessing = false,
+                            selectedFilePaths = emptySet(),
+                            isMultiSelectMode = false,
+                            operationMessage = "已删除 ${paths.size} 个文件"
+                        )
+                    }
+                    reloadCurrentDirectory()
+                }
+                .onFailure { e ->
+                    _uiState.update { it.copy(isProcessing = false, operationMessage = "删除失败: ${e.message}") }
+                }
+        }
+    }
+
+    private fun batchTagFiles(tagId: Long) {
+        viewModelScope.launch {
+            val paths = _uiState.value.selectedFilePaths.toList()
+            paths.forEach { path ->
+                tagRepository.addTagToFile(path, tagId)
+            }
+            _uiState.update {
+                it.copy(
+                    operationMessage = "已为 ${paths.size} 个项目添加标签",
+                    showTagSelector = false
+                )
+            }
+            reloadCurrentDirectory()
+        }
+    }
+
+    fun copyFile(sourcePath: String, targetDir: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessing = true) }
+            try {
+                val sourceFile = File(sourcePath)
+                val targetFile = File(targetDir, sourceFile.name)
+                if (sourceFile.isDirectory) {
+                    sourceFile.copyRecursively(targetFile, overwrite = false)
+                } else {
+                    sourceFile.copyTo(targetFile, overwrite = false)
+                }
+                _uiState.update {
+                    it.copy(isProcessing = false, operationMessage = "已复制: ${sourceFile.name}")
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isProcessing = false, operationMessage = "复制失败: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun moveFile(sourcePath: String, targetDir: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessing = true) }
+            try {
+                val sourceFile = File(sourcePath)
+                val targetFile = File(targetDir, sourceFile.name)
+                val success = if (sourceFile.isDirectory) {
+                    sourceFile.renameTo(targetFile)
+                } else {
+                    sourceFile.renameTo(targetFile)
+                }
+                if (success) {
+                    _uiState.update {
+                        it.copy(isProcessing = false, operationMessage = "已移动: ${sourceFile.name}")
+                    }
+                    reloadCurrentDirectory()
+                } else {
+                    _uiState.update {
+                        it.copy(isProcessing = false, operationMessage = "移动失败")
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isProcessing = false, operationMessage = "移动失败: ${e.message}")
+                }
             }
         }
     }

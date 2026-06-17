@@ -11,6 +11,8 @@ data class TagEntity(
     val name: String,
     val color: Int,
     val icon: String? = null,
+    @ColumnInfo(name = "group_name")
+    val groupName: String? = null,
     @ColumnInfo(name = "sort_order")
     val sortOrder: Int = 0,
     @ColumnInfo(name = "created_at")

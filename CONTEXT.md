@@ -16,7 +16,7 @@
 
 ---
 
-## 设计语言 — 现代极简 (Minimal Modern)
+## 设计语言 — 玻璃态 (Glassmorphism) + 湖蓝暖灰
 
 ### 配色体系
 
@@ -100,3 +100,42 @@
 ### 加载态
 
 - 使用骨架屏 Shimmer 动画，替代全屏 CircularProgressIndicator（推荐，渐进迁移）
+
+### 玻璃态
+
+- 覆盖范围：卡片、对话框、BottomSheet 半透明模糊（85% alpha）
+- TopAppBar 保持不透明
+- Android 12+ 使用 `RenderEffect.createBlurEffect()` 原生模糊，低版本回退半透明无模糊
+- 颜色：`MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)`
+- 圆角：卡片 16dp，弹窗 16dp，BottomSheet 顶部 16dp
+
+#### 弹窗组件
+
+| 组件 | 封装 | 模糊技术 |
+|------|------|----------|
+| GlassDialog | `ui/common/GlassDialog.kt` | Android 12+ `FLAG_BLUR_BEHIND` + `setBlurBehindRadius(30)`；低版本半透明回退 |
+| GlassBottomSheet | `ui/common/GlassBottomSheet.kt` | `containerColor = surface.copy(alpha=0.85f)`，顶部圆角 16dp |
+| GlassCard | `ui/common/BlurredSurface.kt` | `RenderEffect` 或半透明回退 |
+| BlurredSurface | `ui/common/BlurredSurface.kt` | 底层玻璃态容器盒 |
+
+- GlassDialog API 透明封装 `AlertDialog` 参数（`onDismissRequest` / `title` / `text` / `confirmButton` / `dismissButton`）
+- GlassBottomSheet API 透明封装 `ModalBottomSheet` 参数（`onDismissRequest` / `content`）
+- 弹窗模糊半径 30，确保弹窗背后内容清晰可辨但不分散注意力
+
+---
+
+## 新功能术语
+
+| 术语 | 定义 |
+|------|------|
+| **批量操作 (Multi-select)** | 长按进入多选模式，可全选、批量打标签、批量删除 |
+| **复制/移动 (Copy/Move)** | 移动/复制文件到任意目录，使用 SAF 目录选择器 |
+| **未分类 (Untagged)** | 没有任何标签的文件，分类页提供入口 |
+| **标签分组 (Tag Groups)** | 标签归组管理，可按组筛选 |
+| **阅读进度 (Reading Progress)** | 自动保存翻页进度，下次打开自动跳转 |
+| **手动选择封面 (Manual Cover Selection)** | 从书籍文件夹中选择图片作为封面 |
+| **仪表盘 (Dashboard)** | 首页顶部统计卡片（总文件/标签/书籍/回收站） |
+| **快捷访问 (Quick Access)** | 用户自定义常用文件夹/标签/书籍快捷方式，点击直达 |
+| **回收站 (Trash Bin)** | 删除的文件放入回收站，30 天后自动清理，支持恢复/彻底删除 |
+| **压缩包预览 (Archive Preview)** | 支持 ZIP/RAR/7Z 预览内部文件，可单独解压 |
+| **应用快捷方式 (App Shortcut)** | 首页可以添加自定义快捷方式，直达目标页面 |

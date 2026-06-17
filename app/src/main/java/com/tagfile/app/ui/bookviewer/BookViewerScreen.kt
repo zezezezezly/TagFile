@@ -118,6 +118,12 @@ fun BookViewerScreen(
                     val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
                     val spacerWidth = screenWidthDp / 2 - 17.dp
 
+                    // Jump to saved page on initial load
+                    LaunchedEffect(Unit) {
+                        val savedPage = uiState.currentIndex.coerceIn(0, uiState.images.lastIndex)
+                        pagerState.scrollToPage(savedPage)
+                    }
+
                     LaunchedEffect(pagerState.currentPage) {
                         viewModel.onEvent(BookViewerEvent.PageChanged(pagerState.currentPage))
                     }

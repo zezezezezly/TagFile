@@ -111,7 +111,9 @@ class CategoryViewModel @Inject constructor(
                 typeCounts[fileType.label] = count
             }
 
-            _uiState.update { it.copy(typeResults = typeCounts, isLoading = false) }
+            val untaggedCount = searchRepository.getUntaggedFileCount()
+
+            _uiState.update { it.copy(typeResults = typeCounts, untaggedCount = untaggedCount, isLoading = false) }
         }
     }
 

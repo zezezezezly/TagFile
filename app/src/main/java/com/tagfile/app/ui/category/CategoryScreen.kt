@@ -16,11 +16,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tagfile.app.domain.model.FileType
 import com.tagfile.app.ui.common.*
-import com.tagfile.app.ui.theme.TagColors
 import com.tagfile.app.ui.theme.toTagColorOrGray
 import java.io.File
 
@@ -31,7 +31,8 @@ fun CategoryScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToTaggedFiles: (Long) -> Unit = {},
     onNavigateToFileBrowser: (String) -> Unit = {},
-    onNavigateToTypeFiles: (FileType) -> Unit = {}
+    onNavigateToTypeFiles: (FileType) -> Unit = {},
+    onNavigateToUntaggedFiles: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -81,6 +82,7 @@ fun CategoryScreen(
                         }
                         IconButton(onClick = { viewModel.onEvent(CategoryEvent.ShowRemoveTagSelector) }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                @Suppress("DEPRECATION")
                                 Icon(Icons.Default.LabelOff, contentDescription = "取消标签")
                                 Text("取消标签", style = MaterialTheme.typography.labelSmall)
                             }
@@ -208,6 +210,49 @@ fun CategoryScreen(
                 }
 
                 item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNavigateToUntaggedFiles() },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            @Suppress("DEPRECATION")
+                            Icon(
+                                Icons.Default.LabelOff,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("未分类", fontWeight = FontWeight.Medium, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    "${uiState.untaggedCount} 个文件",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            @Suppress("DEPRECATION")
+                            Icon(
+                                Icons.Default.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                item {
                     if (uiState.tags.isEmpty()) {
                         Text(
                             "暂无标签，创建标签后可在此查看",
@@ -216,7 +261,7 @@ fun CategoryScreen(
                         )
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            uiState.tags.forEachIndexed { index, tag ->
+                            uiState.tags.forEach { tag ->
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()

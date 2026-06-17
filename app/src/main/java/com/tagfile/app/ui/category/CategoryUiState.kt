@@ -9,6 +9,7 @@ data class CategoryUiState(
     val tags: List<Tag> = emptyList(),
     val recentFiles: List<FileItem> = emptyList(),
     val largeFiles: List<FileItem> = emptyList(),
+    val untaggedCount: Long = 0,
     val showLargeFiles: Boolean = false,
     val isSelectionMode: Boolean = false,
     val selectedPaths: Set<String> = emptySet(),

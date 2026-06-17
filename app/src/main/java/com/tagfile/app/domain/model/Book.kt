@@ -8,6 +8,7 @@ data class Book(
     val coverPath: String,
     val folderPath: String,
     val pageCount: Int = 0,
+    val currentPage: Int = 0,
     val viewCount: Int = 0,
     val totalDuration: Long = 0,
     val description: String = "",

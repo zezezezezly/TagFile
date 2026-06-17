@@ -27,6 +27,12 @@ interface TagDao {
     @Query("SELECT * FROM tags WHERE id = :tagId")
     fun getByIdFlow(tagId: Long): Flow<TagEntity?>
 
+    @Query("SELECT DISTINCT group_name FROM tags WHERE group_name IS NOT NULL AND group_name != '' ORDER BY group_name ASC")
+    suspend fun getAllGroups(): List<String>
+
+    @Query("SELECT * FROM tags WHERE group_name = :groupName ORDER BY sort_order ASC, created_at DESC")
+    suspend fun getByGroup(groupName: String): List<TagEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(tags: List<TagEntity>)
 

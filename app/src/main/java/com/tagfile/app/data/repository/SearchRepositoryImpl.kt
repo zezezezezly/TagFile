@@ -68,6 +68,25 @@ class SearchRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getUntaggedFileCount(): Long {
+        return withContext(Dispatchers.IO) {
+            fileIndexDao.count() - fileTagDao.countDistinctFilePaths()
+        }
+    }
+
+    override suspend fun getUntaggedFiles(limit: Int): Result<List<FileItem>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val taggedPaths = fileTagDao.getAllDistinctFilePaths().toSet()
+                val allFiles = fileIndexDao.getAllFilesByPath()
+                val untagged = allFiles.filter { it.path !in taggedPaths }.take(limit)
+                Result.success(untagged.map { it.toFileItem() })
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
     override suspend fun searchByType(fileType: FileType, limit: Int): Result<List<FileItem>> {
         return withContext(Dispatchers.IO) {
             try {

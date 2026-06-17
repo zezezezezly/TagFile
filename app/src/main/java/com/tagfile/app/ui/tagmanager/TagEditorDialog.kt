@@ -17,21 +17,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.tagfile.app.ui.common.glassSurfaceColor
 import com.tagfile.app.ui.theme.TagColors
 
 @Composable
 fun TagEditorDialog(
     name: String,
     selectedColorIndex: Int,
+    groupName: String,
     isEditing: Boolean,
     onNameChange: (String) -> Unit,
     onColorSelected: (Int) -> Unit,
+    onGroupNameChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (isEditing) "编辑标签" else "创建标签") },
+        containerColor = glassSurfaceColor(),
         text = {
             Column {
                 OutlinedTextField(
@@ -82,6 +86,17 @@ fun TagEditorDialog(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = groupName,
+                    onValueChange = onGroupNameChange,
+                    label = { Text("标签组") },
+                    placeholder = { Text("输入标签组名称（可选）") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {

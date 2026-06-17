@@ -24,6 +24,7 @@ class TagManagerViewModel @Inject constructor(
     init {
         loadTags()
         loadFileCounts()
+        loadGroups()
     }
 
     fun onEvent(event: TagManagerEvent) {
@@ -35,7 +36,19 @@ class TagManagerViewModel @Inject constructor(
                         showEditorDialog = true,
                         editingTag = null,
                         editorName = "",
-                        editorColorIndex = 0
+                        editorColorIndex = 0,
+                        editorGroupName = ""
+                    )
+                }
+            }
+            is TagManagerEvent.ShowCreateDialogWithGroup -> {
+                _uiState.update {
+                    it.copy(
+                        showEditorDialog = true,
+                        editingTag = null,
+                        editorName = "",
+                        editorColorIndex = 0,
+                        editorGroupName = event.groupName ?: ""
                     )
                 }
             }
@@ -48,7 +61,8 @@ class TagManagerViewModel @Inject constructor(
                         showEditorDialog = true,
                         editingTag = event.tag,
                         editorName = event.tag.name,
-                        editorColorIndex = colorIndex
+                        editorColorIndex = colorIndex,
+                        editorGroupName = event.tag.groupName ?: ""
                     )
                 }
             }
@@ -60,6 +74,9 @@ class TagManagerViewModel @Inject constructor(
             }
             is TagManagerEvent.EditorColorChanged -> {
                 _uiState.update { it.copy(editorColorIndex = event.colorIndex) }
+            }
+            is TagManagerEvent.EditorGroupNameChanged -> {
+                _uiState.update { it.copy(editorGroupName = event.groupName) }
             }
             is TagManagerEvent.SaveTag -> saveTag()
             is TagManagerEvent.ShowDeleteConfirm -> {
@@ -86,6 +103,9 @@ class TagManagerViewModel @Inject constructor(
                     state.copy(sortMode = next)
                 }
             }
+            is TagManagerEvent.SelectGroup -> {
+                _uiState.update { it.copy(selectedGroup = event.groupName) }
+            }
         }
     }
 
@@ -106,6 +126,15 @@ class TagManagerViewModel @Inject constructor(
         }
     }
 
+    private fun loadGroups() {
+        viewModelScope.launch {
+            try {
+                val groups = tagRepository.getAllGroups()
+                _uiState.update { it.copy(allGroups = groups) }
+            } catch (_: Exception) { }
+        }
+    }
+
     private fun saveTag() {
         val state = _uiState.value
         val name = state.editorName.trim()
@@ -120,15 +149,17 @@ class TagManagerViewModel @Inject constructor(
         viewModelScope.launch {
             val color = TagColors.getOrElse(state.editorColorIndex) { TagColors[0] }
             val colorArgb = color.toIntArgb()
+            val groupName = state.editorGroupName.trim().ifEmpty { null }
 
             state.editingTag?.let { existing ->
-                tagRepository.updateTag(existing.copy(name = name, color = colorArgb))
+                tagRepository.updateTag(existing.copy(name = name, color = colorArgb, groupName = groupName))
             } ?: run {
-                tagRepository.createTag(name, colorArgb)
+                tagRepository.createTag(name, colorArgb, groupName = groupName)
             }
 
             _uiState.update { it.copy(showEditorDialog = false) }
             loadFileCounts()
+            loadGroups()
         }
     }
 
@@ -138,6 +169,7 @@ class TagManagerViewModel @Inject constructor(
             tagRepository.deleteTag(tag.id)
             _uiState.update { it.copy(showDeleteConfirm = false, deleteTargetTag = null) }
             loadFileCounts()
+            loadGroups()
         }
     }
 }

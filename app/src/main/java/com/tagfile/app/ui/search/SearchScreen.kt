@@ -404,7 +404,7 @@ fun SearchScreen(
     }
 
     if (uiState.showTagSelector) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(SearchEvent.HideTagSelector) },
             title = { Text("添加标签") },
             text = {
@@ -462,7 +462,7 @@ fun SearchScreen(
     }
 
     if (uiState.showRemoveTagSelector) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(SearchEvent.HideRemoveTagSelector) },
             title = { Text("取消标签") },
             text = {
@@ -520,7 +520,7 @@ fun SearchScreen(
     }
 
     if (uiState.showTagPicker) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(SearchEvent.HideTagPicker) },
             title = { Text("选择标签") },
             text = {

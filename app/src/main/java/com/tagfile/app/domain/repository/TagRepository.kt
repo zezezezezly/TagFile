@@ -7,7 +7,7 @@ interface TagRepository {
     fun getAllTags(): Flow<List<Tag>>
     suspend fun getTagById(tagId: Long): Tag?
     suspend fun getTagByIdFlow(tagId: Long): Flow<Tag?>
-    suspend fun createTag(name: String, color: Int, icon: String? = null): Long
+    suspend fun createTag(name: String, color: Int, icon: String? = null, groupName: String? = null): Long
     suspend fun updateTag(tag: Tag)
     suspend fun deleteTag(tagId: Long)
     suspend fun addTagToFile(filePath: String, tagId: Long)
@@ -20,4 +20,5 @@ interface TagRepository {
     suspend fun updateFilePath(oldPath: String, newPath: String)
     suspend fun deleteAllCrossRefsByFilePath(filePath: String)
     suspend fun getTagFileCounts(): Map<Long, Int>
+    suspend fun getAllGroups(): List<String>
 }

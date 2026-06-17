@@ -63,6 +63,12 @@ interface FileTagDao {
 
     @Query("DELETE FROM file_tag_cross_ref")
     suspend fun deleteAll()
+
+    @Query("SELECT COUNT(DISTINCT file_path) FROM file_tag_cross_ref")
+    suspend fun countDistinctFilePaths(): Long
+
+    @Query("SELECT DISTINCT file_path FROM file_tag_cross_ref")
+    suspend fun getAllDistinctFilePaths(): List<String>
 }
 
 data class TagFileCount(

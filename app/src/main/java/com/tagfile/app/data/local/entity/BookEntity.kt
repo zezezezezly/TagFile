@@ -17,6 +17,8 @@ data class BookEntity(
     val folderPath: String,
     @ColumnInfo(name = "page_count")
     val pageCount: Int,
+    @ColumnInfo(name = "current_page")
+    val currentPage: Int = 0,
     @ColumnInfo(name = "view_count")
     val viewCount: Int = 0,
     @ColumnInfo(name = "total_duration")

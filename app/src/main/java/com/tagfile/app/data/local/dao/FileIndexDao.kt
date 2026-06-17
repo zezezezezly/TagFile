@@ -49,4 +49,7 @@ interface FileIndexDao {
 
     @Query("SELECT * FROM file_index WHERE extension IN (:extensions) ORDER BY name ASC LIMIT :limit")
     suspend fun searchAllByExtensions(extensions: List<String>, limit: Int): List<FileIndexEntity>
+
+    @Query("SELECT * FROM file_index WHERE is_directory = 0")
+    suspend fun getAllFilesByPath(): List<FileIndexEntity>
 }

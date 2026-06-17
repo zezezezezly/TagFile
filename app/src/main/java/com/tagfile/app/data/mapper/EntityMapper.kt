@@ -15,6 +15,7 @@ object EntityMapper {
             name = name,
             color = color,
             icon = icon,
+            groupName = groupName,
             sortOrder = sortOrder,
             createdAt = createdAt
         )
@@ -26,6 +27,7 @@ object EntityMapper {
             name = name,
             color = color,
             icon = icon,
+            groupName = groupName,
             sortOrder = sortOrder,
             createdAt = createdAt
         )
@@ -49,6 +51,7 @@ object EntityMapper {
             coverPath = coverPath,
             folderPath = folderPath,
             pageCount = pageCount,
+            currentPage = currentPage,
             viewCount = viewCount,
             totalDuration = totalDuration,
             description = description,
@@ -67,6 +70,7 @@ object EntityMapper {
             coverPath = coverPath,
             folderPath = folderPath,
             pageCount = pageCount,
+            currentPage = currentPage,
             viewCount = viewCount,
             totalDuration = totalDuration,
             description = description,

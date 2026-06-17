@@ -33,8 +33,8 @@ class TagRepositoryImpl @Inject constructor(
         return tagDao.getByIdFlow(tagId).map { it?.toDomain() }
     }
 
-    override suspend fun createTag(name: String, color: Int, icon: String?): Long {
-        val entity = TagEntity(name = name, color = color, icon = icon)
+    override suspend fun createTag(name: String, color: Int, icon: String?, groupName: String?): Long {
+        val entity = TagEntity(name = name, color = color, icon = icon, groupName = groupName)
         return tagDao.insert(entity)
     }
 
@@ -91,5 +91,9 @@ class TagRepositoryImpl @Inject constructor(
 
     override suspend fun getTagFileCounts(): Map<Long, Int> {
         return fileTagDao.getTagFileCounts().associate { it.tagId to it.count }
+    }
+
+    override suspend fun getAllGroups(): List<String> {
+        return tagDao.getAllGroups()
     }
 }

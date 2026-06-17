@@ -265,6 +265,10 @@ class ShelfRepositoryImpl @Inject constructor(
         bookDao.update(updated)
     }
 
+    override suspend fun updateCurrentPage(bookId: Long, page: Int) {
+        bookDao.updateCurrentPage(bookId, page)
+    }
+
     override suspend fun repairBookData(): List<RepairResult> {
         val books = bookDao.getAllList().map { it.toDomain() }
         val results = mutableListOf<RepairResult>()

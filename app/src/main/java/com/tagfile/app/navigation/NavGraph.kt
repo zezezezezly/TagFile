@@ -34,7 +34,9 @@ import com.tagfile.app.ui.settings.PersonalizationScreen
 import com.tagfile.app.ui.settings.SettingsScreen
 import com.tagfile.app.ui.taggedfiles.TaggedFilesScreen
 import com.tagfile.app.ui.tagmanager.TagManagerScreen
+import com.tagfile.app.ui.trash.TrashScreen
 import com.tagfile.app.ui.typefiles.TypeFilesScreen
+import com.tagfile.app.ui.untagged.UntaggedFilesScreen
 import org.json.JSONArray
 
 object Routes {
@@ -56,18 +58,20 @@ object Routes {
     const val BOOK_LIST = "book_list?query={query}&mode={mode}&sortMode={sortMode}"
     const val BOOK_DETAIL = "book_detail/{bookId}"
     const val BOOK_VIEWER = "book_viewer/{bookId}"
+    const val TRASH = "trash"
 
     const val FILE_LIST_NO_ARG = "file_list"
 
     fun taggedFiles(tagId: Long) = "tagged_files/$tagId"
     fun typeFiles(fileType: FileType) = "type_files/${fileType.name}"
-    fun fileList(dir: String? = null) = if (dir != null) "file_list?dir=${android.net.Uri.encode(dir)}"
+    fun fileList(dir: String? = null) = if (dir != null) "file_list?dir=${Uri.encode(dir)}"
         else "file_list"
     fun filterSettings(filterId: Long = -1L) = "filter_settings/$filterId"
     fun bookViewer(bookId: Long) = "book_viewer/$bookId"
     fun bookDetail(bookId: Long) = "book_detail/$bookId"
+    fun trash() = TRASH
     fun bookList(query: String = "", mode: String = "TITLE", sortMode: String = "TITLE") =
-        "book_list?query=${android.net.Uri.encode(query)}&mode=${android.net.Uri.encode(mode)}&sortMode=${android.net.Uri.encode(sortMode)}"
+        "book_list?query=${Uri.encode(query)}&mode=${Uri.encode(mode)}&sortMode=${Uri.encode(sortMode)}"
 }
 
 @Composable
@@ -122,6 +126,18 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToShelf = {
                     navController.navigate(Routes.SHELF)
+                },
+                onNavigateToTrash = {
+                    navController.navigate(Routes.TRASH)
+                },
+                onNavigateToFileList = { dirPath ->
+                    navController.navigate(Routes.fileList(dirPath))
+                },
+                onNavigateToTaggedFiles = { tagId ->
+                    navController.navigate(Routes.taggedFiles(tagId))
+                },
+                onNavigateToBookDetail = { bookId ->
+                    navController.navigate(Routes.bookDetail(bookId))
                 }
             )
         }
@@ -211,6 +227,18 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToTypeFiles = { fileType ->
                     navController.navigate(Routes.typeFiles(fileType))
+                },
+                onNavigateToUntaggedFiles = {
+                    navController.navigate("untagged_files")
+                }
+            )
+        }
+
+        composable("untagged_files") {
+            UntaggedFilesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToImageViewer = { paths, index ->
+                    navigateToImageViewer(navController, paths, index)
                 }
             )
         }
@@ -376,6 +404,12 @@ fun NavGraph(navController: NavHostController) {
                     CircularProgressIndicator()
                 }
             }
+        }
+
+        composable(Routes.TRASH) {
+            TrashScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

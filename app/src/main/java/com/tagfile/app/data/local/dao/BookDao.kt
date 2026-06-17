@@ -71,4 +71,7 @@ interface BookDao {
 
     @Query("SELECT * FROM books WHERE id IN (:ids)")
     suspend fun getByIds(ids: List<Long>): List<BookEntity>
+
+    @Query("UPDATE books SET current_page = :page WHERE id = :id")
+    suspend fun updateCurrentPage(id: Long, page: Int)
 }

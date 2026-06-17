@@ -3,6 +3,8 @@ package com.tagfile.app.ui.tagmanager
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -19,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.tagfile.app.ui.common.GlassCard
 import com.tagfile.app.ui.common.SearchBar
 import com.tagfile.app.ui.common.TagChip
 import com.tagfile.app.ui.theme.toTagColorOrGray
@@ -53,7 +56,13 @@ fun TagManagerScreen(
                     IconButton(onClick = { viewModel.onEvent(TagManagerEvent.ToggleSortMode) }) {
                         Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "排序")
                     }
-                    IconButton(onClick = { viewModel.onEvent(TagManagerEvent.ShowCreateDialog) }) {
+                    IconButton(onClick = {
+                        if (uiState.selectedGroup != null) {
+                            viewModel.onEvent(TagManagerEvent.ShowCreateDialogWithGroup(uiState.selectedGroup))
+                        } else {
+                            viewModel.onEvent(TagManagerEvent.ShowCreateDialog)
+                        }
+                    }) {
                         Icon(Icons.Default.Add, contentDescription = "创建标签")
                     }
                 }
@@ -66,6 +75,34 @@ fun TagManagerScreen(
                 onQueryChange = { viewModel.onEvent(TagManagerEvent.SearchQueryChanged(it)) },
                 placeholder = "搜索标签..."
             )
+
+            if (uiState.allGroups.isNotEmpty()) {
+                GlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            FilterChip(
+                                selected = uiState.selectedGroup == null,
+                                onClick = { viewModel.onEvent(TagManagerEvent.SelectGroup(null)) },
+                                label = { Text("全部") }
+                            )
+                        }
+                        items(uiState.allGroups) { group ->
+                            FilterChip(
+                                selected = uiState.selectedGroup == group,
+                                onClick = { viewModel.onEvent(TagManagerEvent.SelectGroup(group)) },
+                                label = { Text(group) }
+                            )
+                        }
+                    }
+                }
+            }
 
             val sortLabel = when (uiState.sortMode) {
                 TagSortMode.COLOR -> "按颜色排序"
@@ -92,7 +129,13 @@ fun TagManagerScreen(
                         )
                         if (uiState.searchQuery.isEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
-                            TextButton(onClick = { viewModel.onEvent(TagManagerEvent.ShowCreateDialog) }) {
+                            TextButton(onClick = {
+                                if (uiState.selectedGroup != null) {
+                                    viewModel.onEvent(TagManagerEvent.ShowCreateDialogWithGroup(uiState.selectedGroup))
+                                } else {
+                                    viewModel.onEvent(TagManagerEvent.ShowCreateDialog)
+                                }
+                            }) {
                                 Text("创建第一个标签")
                             }
                         }
@@ -115,11 +158,19 @@ fun TagManagerScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                TagChip(
-                                    name = tag.name,
-                                    color = tag.color.toTagColorOrGray(),
-                                    modifier = Modifier.weight(1f)
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    TagChip(
+                                        name = tag.name,
+                                        color = tag.color.toTagColorOrGray()
+                                    )
+                                    if (!tag.groupName.isNullOrBlank()) {
+                                        Text(
+                                            text = tag.groupName,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
                                 if (uiState.sortMode == TagSortMode.FILE_COUNT) {
                                     val count = uiState.tagFileCounts[tag.id] ?: 0
                                     Text(
@@ -161,9 +212,11 @@ fun TagManagerScreen(
         TagEditorDialog(
             name = uiState.editorName,
             selectedColorIndex = uiState.editorColorIndex,
+            groupName = uiState.editorGroupName,
             isEditing = uiState.editingTag != null,
             onNameChange = { viewModel.onEvent(TagManagerEvent.EditorNameChanged(it)) },
             onColorSelected = { viewModel.onEvent(TagManagerEvent.EditorColorChanged(it)) },
+            onGroupNameChange = { viewModel.onEvent(TagManagerEvent.EditorGroupNameChanged(it)) },
             onDismiss = { viewModel.onEvent(TagManagerEvent.DismissEditorDialog) },
             onConfirm = { viewModel.onEvent(TagManagerEvent.SaveTag) }
         )

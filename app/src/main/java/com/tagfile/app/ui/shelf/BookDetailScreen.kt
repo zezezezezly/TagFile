@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tagfile.app.domain.model.Tag
+import com.tagfile.app.ui.common.GlassCard
 import com.tagfile.app.ui.common.TagChip
 import com.tagfile.app.ui.theme.TagColors
 import java.io.File
@@ -103,15 +104,31 @@ fun BookDetailScreen(
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        AsyncImage(
-                            model = File(book.coverPath),
-                            contentDescription = book.title,
-                            modifier = Modifier
-                                .width(140.dp)
-                                .aspectRatio(0.7f)
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
+                        Box(modifier = Modifier.width(140.dp).aspectRatio(0.7f)) {
+                            AsyncImage(
+                                model = File(book.coverPath),
+                                contentDescription = book.title,
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            IconButton(
+                                onClick = { viewModel.onEvent(BookDetailEvent.ToggleCoverPicker) },
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                            ) {
+                                Icon(
+                                    Icons.Default.Edit,
+                                    contentDescription = "更换封面",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
 
                         Column(
                             modifier = Modifier.weight(1f)
@@ -459,6 +476,15 @@ fun BookDetailScreen(
             )
         }
     }
+
+    if (uiState.showCoverPicker) {
+        CoverPickerDialog(
+            images = uiState.coverPickerImages,
+            currentCoverPath = uiState.book?.coverPath ?: "",
+            onSelect = { viewModel.onEvent(BookDetailEvent.SelectCover(it)) },
+            onDismiss = { viewModel.onEvent(BookDetailEvent.ToggleCoverPicker) }
+        )
+    }
 }
 
 @Composable
@@ -712,4 +738,73 @@ private fun formatDuration(millis: Long): String {
     val hours = totalSeconds / 3600
     val minutes = (totalSeconds % 3600) / 60
     return if (hours > 0) "${hours}h${minutes}m" else "${minutes}分"
+}
+
+@Composable
+private fun CoverPickerDialog(
+    images: List<String>,
+    currentCoverPath: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+        shape = RoundedCornerShape(16.dp),
+        title = {
+            Text("选择封面", fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column {
+                if (images.isEmpty()) {
+                    Text(
+                        "该文件夹中没有图片",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.heightIn(max = 360.dp)
+                    ) {
+                        itemsIndexed(images, key = { _, path -> path }) { _, path ->
+                            val isCurrent = path == currentCoverPath
+                            GlassCard(
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .aspectRatio(0.7f)
+                                    .then(
+                                        if (isCurrent) {
+                                            Modifier.border(
+                                                2.dp,
+                                                MaterialTheme.colorScheme.primary,
+                                                RoundedCornerShape(8.dp)
+                                            )
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
+                                    .clickable { onSelect(path) }
+                            ) {
+                                AsyncImage(
+                                    model = File(path),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
 }

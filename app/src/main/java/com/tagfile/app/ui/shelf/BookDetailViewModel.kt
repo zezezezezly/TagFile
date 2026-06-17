@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 data class BookDetailUiState(
@@ -30,8 +31,15 @@ data class BookDetailUiState(
     val showScoreEditor: Boolean = false,
     val editScoreText: String = "",
     val showAuthorEditor: Boolean = false,
-    val editAuthorName: String = ""
+    val editAuthorName: String = "",
+    val showCoverPicker: Boolean = false,
+    val coverPickerImages: List<String> = emptyList()
 )
+
+sealed class BookDetailEvent {
+    data class SelectCover(val imagePath: String) : BookDetailEvent()
+    data object ToggleCoverPicker : BookDetailEvent()
+}
 
 @HiltViewModel
 class BookDetailViewModel @Inject constructor(
@@ -46,6 +54,29 @@ class BookDetailViewModel @Inject constructor(
         val bookId = savedStateHandle.get<Long>("bookId") ?: 0L
         if (bookId > 0) loadBook(bookId)
         loadAllTags()
+    }
+
+    fun onEvent(event: BookDetailEvent) {
+        when (event) {
+            is BookDetailEvent.SelectCover -> saveCover(event.imagePath)
+            is BookDetailEvent.ToggleCoverPicker -> {
+                val current = _uiState.value.showCoverPicker
+                if (!current) {
+                    val book = _uiState.value.book
+                    if (book != null) {
+                        val images = shelfRepository.getImagesInBook(book)
+                        _uiState.update {
+                            it.copy(
+                                showCoverPicker = true,
+                                coverPickerImages = images
+                            )
+                        }
+                    }
+                } else {
+                    _uiState.update { it.copy(showCoverPicker = false) }
+                }
+            }
+        }
     }
 
     private fun loadBook(bookId: Long) {
@@ -243,6 +274,29 @@ class BookDetailViewModel @Inject constructor(
 
     fun onAuthorNameChanged(value: String) {
         _uiState.update { it.copy(editAuthorName = value) }
+    }
+
+    fun saveCover(imagePath: String) {
+        val book = _uiState.value.book ?: return
+        viewModelScope.launch {
+            try {
+                val srcFile = File(imagePath)
+                val bookDir = File(book.folderPath)
+                val coverFile = File(bookDir, "cover_${srcFile.name}")
+                if (srcFile.absolutePath != coverFile.absolutePath) {
+                    srcFile.copyTo(coverFile, overwrite = true)
+                }
+                _uiState.update {
+                    it.copy(
+                        book = book.copy(coverPath = coverFile.absolutePath),
+                        showCoverPicker = false,
+                        message = "封面已更新"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(message = "封面设置失败: ${e.message}") }
+            }
+        }
     }
 
     fun saveAuthor() {

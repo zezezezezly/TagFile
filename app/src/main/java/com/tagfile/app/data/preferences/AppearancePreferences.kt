@@ -6,9 +6,17 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
+
+data class AppShortcut(
+    val type: String, // "folder", "tag", "book"
+    val path: String,
+    val label: String
+)
 
 @Singleton
 class AppearancePreferences @Inject constructor(
@@ -53,4 +61,52 @@ class AppearancePreferences @Inject constructor(
         prefs.edit().putInt("stroke_color", color).apply()
         _strokeColor.value = color
     }
+
+    // region Shortcuts
+
+    private val _shortcuts = MutableStateFlow(loadShortcuts())
+    val shortcuts: StateFlow<List<AppShortcut>> = _shortcuts.asStateFlow()
+
+    fun addShortcut(shortcut: AppShortcut) {
+        val updated = _shortcuts.value.toMutableList().apply { add(shortcut) }
+        saveShortcuts(updated)
+        _shortcuts.value = updated
+    }
+
+    fun removeShortcut(index: Int) {
+        val updated = _shortcuts.value.toMutableList().apply { removeAt(index) }
+        saveShortcuts(updated)
+        _shortcuts.value = updated
+    }
+
+    private fun loadShortcuts(): List<AppShortcut> {
+        val json = prefs.getString("shortcuts", null) ?: return emptyList()
+        return try {
+            val arr = JSONArray(json)
+            (0 until arr.length()).map { i ->
+                val obj = arr.getJSONObject(i)
+                AppShortcut(
+                    type = obj.getString("type"),
+                    path = obj.getString("path"),
+                    label = obj.getString("label")
+                )
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun saveShortcuts(shortcuts: List<AppShortcut>) {
+        val arr = JSONArray()
+        shortcuts.forEach { s ->
+            arr.put(JSONObject().apply {
+                put("type", s.type)
+                put("path", s.path)
+                put("label", s.label)
+            })
+        }
+        prefs.edit().putString("shortcuts", arr.toString()).apply()
+    }
+
+    // endregion
 }

@@ -4,13 +4,14 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class DatabaseExport(
-    val version: Int = 1,
+    val version: Int = 2,
     val exportedAt: Long = System.currentTimeMillis(),
     val books: List<BookJson>,
     val tags: List<TagJson>,
     val fileIndex: List<FileIndexJson>,
     val fileTagCrossRefs: List<FileTagCrossRefJson>,
-    val filterPresets: List<FilterPresetJson>
+    val filterPresets: List<FilterPresetJson>,
+    val trash: List<TrashJson> = emptyList()
 )
 
 @Serializable
@@ -22,6 +23,7 @@ data class BookJson(
     val coverPath: String,
     val folderPath: String,
     val pageCount: Int,
+    val currentPage: Int = 0,
     val viewCount: Int = 0,
     val totalDuration: Long = 0,
     val description: String = "",
@@ -36,8 +38,20 @@ data class TagJson(
     val name: String,
     val color: Int,
     val icon: String? = null,
+    val groupName: String? = null,
     val sortOrder: Int = 0,
     val createdAt: Long
+)
+
+@Serializable
+data class TrashJson(
+    val id: Long,
+    val originalPath: String,
+    val trashPath: String,
+    val fileName: String,
+    val isDirectory: Boolean = false,
+    val deletedAt: Long,
+    val fileSize: Long = 0
 )
 
 @Serializable

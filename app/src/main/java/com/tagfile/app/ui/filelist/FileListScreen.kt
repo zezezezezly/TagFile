@@ -1,12 +1,15 @@
 package com.tagfile.app.ui.filelist
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import androidx.core.net.toUri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -27,13 +30,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tagfile.app.domain.model.FileType
 import com.tagfile.app.ui.common.*
-import com.tagfile.app.ui.theme.TagColors
 import com.tagfile.app.ui.theme.toTagColorOrGray
 import java.io.File
 
@@ -50,6 +51,34 @@ fun FileListScreen(
 
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
+
+    val safDirPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        uri?.let { treeUri ->
+            val docDir = extractPathFromTreeUri(context, treeUri)
+            if (docDir != null) {
+                uiState.selectedPaths.forEach { path ->
+                    viewModel.onEvent(FileListEvent.CopySelectedTo(docDir))
+                }
+                viewModel.onEvent(FileListEvent.HideOperationsMenu)
+            }
+        }
+    }
+
+    val safMoveDirPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        uri?.let { treeUri ->
+            val docDir = extractPathFromTreeUri(context, treeUri)
+            if (docDir != null) {
+                uiState.selectedPaths.forEach { path ->
+                    viewModel.onEvent(FileListEvent.MoveSelectedTo(docDir))
+                }
+                viewModel.onEvent(FileListEvent.HideOperationsMenu)
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -191,6 +220,12 @@ fun FileListScreen(
                                 Text("删除", style = MaterialTheme.typography.labelSmall)
                             }
                         }
+                        IconButton(onClick = { viewModel.onEvent(FileListEvent.ShowOperationsMenu) }) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.MoreHoriz, contentDescription = "更多操作")
+                                Text("更多", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
                     }
                 }
             }
@@ -300,7 +335,7 @@ fun FileListScreen(
     }
 
     if (uiState.showTagSelector) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(FileListEvent.HideTagSelector) },
             title = { Text("添加标签") },
             text = {
@@ -358,7 +393,7 @@ fun FileListScreen(
     }
 
     if (uiState.showRemoveTagSelector) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(FileListEvent.HideRemoveTagSelector) },
             title = { Text("取消标签") },
             text = {
@@ -432,7 +467,7 @@ fun FileListScreen(
     }
 
     if (uiState.showNewFolderDialog) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(FileListEvent.HideNewFolderDialog) },
             title = { Text("新建文件夹") },
             text = {
@@ -453,7 +488,7 @@ fun FileListScreen(
     }
 
     if (uiState.showRenameDialog) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(FileListEvent.HideRenameDialog) },
             title = { Text("重命名") },
             text = {
@@ -474,7 +509,7 @@ fun FileListScreen(
     }
 
     if (uiState.showDeleteConfirm) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(FileListEvent.DismissDeleteConfirm) },
             title = { Text("删除确认") },
             text = { Text("确定要删除选中的 ${uiState.selectedPaths.size} 个文件吗？") },
@@ -503,6 +538,46 @@ fun FileListScreen(
             onDismiss = { viewModel.onEvent(FileListEvent.DismissPermissionDialog) }
         )
     }
+
+    if (uiState.showOperationsMenu) {
+        GlassBottomSheet(
+            onDismissRequest = { viewModel.onEvent(FileListEvent.HideOperationsMenu) }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "文件操作",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                TextButton(
+                    onClick = {
+                        safDirPicker.launch(null)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("复制到...", style = MaterialTheme.typography.bodyLarge)
+                }
+                TextButton(
+                    onClick = {
+                        safMoveDirPicker.launch(null)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.DriveFileMove, contentDescription = null)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("移动到...", style = MaterialTheme.typography.bodyLarge)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
 }
 
 private fun openFile(context: android.content.Context, filePath: String) {
@@ -518,4 +593,25 @@ private fun openFile(context: android.content.Context, filePath: String) {
         }
         context.startActivity(intent)
     } catch (_: Exception) { }
+}
+
+private fun extractPathFromTreeUri(context: android.content.Context, treeUri: Uri): String? {
+    val docId = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, treeUri)?.uri?.lastPathSegment
+        ?: treeUri.lastPathSegment ?: return null
+    val split = docId.split(":".toRegex(), limit = 2)
+    return if (split.size >= 2) {
+        val storage = split[0]
+        val subPath = split[1]
+        if (storage.equals("primary", ignoreCase = true)) {
+            "${Environment.getExternalStorageDirectory()}/$subPath"
+        } else {
+            "/storage/$storage/$subPath"
+        }
+    } else {
+        if (docId.equals("primary", ignoreCase = true)) {
+            Environment.getExternalStorageDirectory()?.absolutePath
+        } else {
+            "/storage/$docId"
+        }
+    }
 }

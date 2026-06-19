@@ -42,8 +42,8 @@ interface BookDao {
     @Query("UPDATE books SET view_count = view_count + 1, last_read_time = :time WHERE id = :id")
     suspend fun incrementViewCount(id: Long, time: Long)
 
-    @Query("UPDATE books SET total_duration = total_duration + :duration WHERE id = :id")
-    suspend fun addDuration(id: Long, duration: Long)
+    @Query("UPDATE books SET read_duration = read_duration + :duration, last_read_time = :time WHERE id = :id")
+    suspend fun addReadDuration(id: Long, duration: Long, time: Long)
 
     @Query("SELECT COUNT(*) FROM books")
     suspend fun count(): Int
@@ -56,6 +56,9 @@ interface BookDao {
 
     @Query("SELECT * FROM books ORDER BY RANDOM() LIMIT :limit")
     fun getRandomBooks(limit: Int): Flow<List<BookEntity>>
+
+    @Query("SELECT * FROM books WHERE last_read_time > 0 ORDER BY last_read_time DESC")
+    fun getReadHistory(): Flow<List<BookEntity>>
 
     @Query("SELECT * FROM books WHERE last_read_time > 0 ORDER BY last_read_time DESC LIMIT :limit")
     fun getRecentlyRead(limit: Int): Flow<List<BookEntity>>

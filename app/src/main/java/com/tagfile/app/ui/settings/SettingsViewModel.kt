@@ -135,7 +135,7 @@ class SettingsViewModel @Inject constructor(
     private suspend fun buildExportJson(): String {
         val books = bookDao.getAllList().map {
             BookJson(it.id, it.title, it.author, it.tags, it.coverPath, it.folderPath,
-                it.pageCount, it.currentPage, it.viewCount, it.totalDuration,
+                it.pageCount, it.currentPage, it.viewCount, it.readDuration,
                 it.description, it.score, it.lastReadTime, it.createdAt)
         }
         val tags = tagDao.getAllList().map {
@@ -205,7 +205,7 @@ class SettingsViewModel @Inject constructor(
                     bookDao.insertAll(export.books.map {
                         BookEntity(it.id, it.title, it.author, it.tags, it.coverPath,
                             it.folderPath, it.pageCount, it.currentPage, it.viewCount,
-                            it.totalDuration, it.description, it.score,
+                            it.readDuration, it.description, it.score,
                             it.lastReadTime, it.createdAt)
                     })
                     tagDao.insertAll(export.tags.map {

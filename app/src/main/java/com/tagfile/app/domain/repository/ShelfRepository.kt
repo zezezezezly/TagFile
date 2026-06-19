@@ -11,11 +11,11 @@ interface ShelfRepository {
     suspend fun scanAndAddBooks(folderPath: String): List<Book>
     suspend fun getBookById(id: Long): Book?
     suspend fun incrementViewCount(id: Long)
-    suspend fun addDuration(id: Long, duration: Long)
+    suspend fun addReadDuration(id: Long, duration: Long, time: Long)
     fun searchBooks(query: String, mode: SearchMode): Flow<List<Book>>
     suspend fun getDailyRecommendations(count: Int, seed: Long): List<Book>
     fun getImagesInBook(book: Book): List<String>
-    fun getRecentlyReadBooks(limit: Int): Flow<List<Book>>
+    fun getReadHistory(): Flow<List<Book>>
     suspend fun updateBookDescription(id: Long, description: String)
     suspend fun updateBookScore(id: Long, score: Float)
     suspend fun updateBookTags(id: Long, tags: String)

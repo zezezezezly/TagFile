@@ -25,7 +25,7 @@ data class BookJson(
     val pageCount: Int,
     val currentPage: Int = 0,
     val viewCount: Int = 0,
-    val totalDuration: Long = 0,
+    val readDuration: Long = 0,
     val description: String = "",
     val score: Float = 0f,
     val lastReadTime: Long,

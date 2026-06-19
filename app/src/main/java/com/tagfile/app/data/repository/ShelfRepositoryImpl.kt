@@ -122,8 +122,8 @@ class ShelfRepositoryImpl @Inject constructor(
         bookDao.incrementViewCount(id, System.currentTimeMillis())
     }
 
-    override suspend fun addDuration(id: Long, duration: Long) {
-        bookDao.addDuration(id, duration)
+    override suspend fun addReadDuration(id: Long, duration: Long, time: Long) {
+        bookDao.addReadDuration(id, duration, time)
     }
 
     override fun searchBooks(query: String, mode: SearchMode): Flow<List<Book>> {
@@ -151,8 +151,8 @@ class ShelfRepositoryImpl @Inject constructor(
         }?.sortedBy { it.name }?.map { it.absolutePath } ?: emptyList()
     }
 
-    override fun getRecentlyReadBooks(limit: Int): Flow<List<Book>> {
-        return bookDao.getRecentlyRead(limit).map { entities -> entities.map { it.toDomain() } }
+    override fun getReadHistory(): Flow<List<Book>> {
+        return bookDao.getReadHistory().map { entities -> entities.map { it.toDomain() } }
     }
 
     private fun resolvePath(path: String): String {
@@ -348,7 +348,7 @@ class ShelfRepositoryImpl @Inject constructor(
                     author = updatedBook.author, tags = updatedBook.tags,
                     coverPath = updatedBook.coverPath, folderPath = updatedBook.folderPath,
                     pageCount = updatedBook.pageCount, viewCount = updatedBook.viewCount,
-                    totalDuration = updatedBook.totalDuration, description = updatedBook.description,
+                    readDuration = updatedBook.readDuration, description = updatedBook.description,
                     score = updatedBook.score, lastReadTime = updatedBook.lastReadTime,
                     createdAt = updatedBook.createdAt
                 )

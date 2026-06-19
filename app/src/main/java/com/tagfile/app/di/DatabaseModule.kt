@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.tagfile.app.data.local.AppDatabase
 import com.tagfile.app.data.local.MIGRATION_6_7
+import com.tagfile.app.data.local.MIGRATION_7_8
 import com.tagfile.app.data.local.dao.BookDao
 import com.tagfile.app.data.local.dao.FileIndexDao
 import com.tagfile.app.data.local.dao.FileTagDao
@@ -28,7 +29,7 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "tagfile.db"
-        ).addMigrations(MIGRATION_6_7)
+        ).addMigrations(MIGRATION_6_7, MIGRATION_7_8)
             .build()
     }
 

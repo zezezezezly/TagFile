@@ -21,8 +21,8 @@ data class BookEntity(
     val currentPage: Int = 0,
     @ColumnInfo(name = "view_count")
     val viewCount: Int = 0,
-    @ColumnInfo(name = "total_duration")
-    val totalDuration: Long = 0,
+    @ColumnInfo(name = "read_duration")
+    val readDuration: Long = 0,
     @ColumnInfo(name = "description", defaultValue = "")
     val description: String = "",
     @ColumnInfo(name = "score", defaultValue = "0.0")

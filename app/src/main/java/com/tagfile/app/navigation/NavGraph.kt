@@ -3,15 +3,7 @@ package com.tagfile.app.navigation
 import android.net.Uri
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -27,6 +19,8 @@ import com.tagfile.app.ui.home.HomeScreen
 import com.tagfile.app.ui.shelf.BookDetailScreen
 import com.tagfile.app.ui.shelf.BookListScreen
 import com.tagfile.app.ui.shelf.ShelfScreen
+import com.tagfile.app.ui.history.ReadingHistoryScreen
+import com.tagfile.app.ui.bookviewer.BookViewerScreen
 import com.tagfile.app.ui.settings.ShelfSettingsScreen
 import com.tagfile.app.ui.imageviewer.ImageViewerScreen
 import com.tagfile.app.ui.search.SearchScreen
@@ -58,6 +52,7 @@ object Routes {
     const val BOOK_LIST = "book_list?query={query}&mode={mode}&sortMode={sortMode}"
     const val BOOK_DETAIL = "book_detail/{bookId}"
     const val BOOK_VIEWER = "book_viewer/{bookId}"
+    const val READING_HISTORY = "reading_history"
     const val TRASH = "trash"
 
     const val FILE_LIST_NO_ARG = "file_list"
@@ -329,6 +324,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onNavigateToBrowse = { query, mode ->
                     navController.navigate(Routes.bookList(query, mode))
+                },
+                onNavigateToHistory = {
+                    navController.navigate(Routes.READING_HISTORY)
                 }
             )
         }
@@ -372,38 +370,24 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
+        composable(Routes.READING_HISTORY) {
+            ReadingHistoryScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToBookDetail = { bookId ->
+                    navController.navigate(Routes.bookDetail(bookId))
+                }
+            )
+        }
+
         composable(
             route = Routes.BOOK_VIEWER,
             arguments = listOf(
                 navArgument("bookId") { type = NavType.LongType }
             )
         ) {
-            val vm: com.tagfile.app.ui.bookviewer.BookViewerViewModel = hiltViewModel()
-            val uiState by vm.uiState.collectAsState()
-
-            if (uiState.images.isNotEmpty()) {
-                ImageViewerScreen(
-                    imagePaths = uiState.images,
-                    initialIndex = 0,
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToEnhance = { path ->
-                        val encoded = Uri.encode(path)
-                        navController.navigate("enhance?path=$encoded")
-                    }
-                )
-            } else if (uiState.error != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.Text(
-                        text = uiState.error ?: "书籍不存在",
-                        style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.error
-                    )
-                }
-            } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
+            BookViewerScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         composable(Routes.TRASH) {

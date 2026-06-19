@@ -35,6 +35,12 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE books RENAME COLUMN total_duration TO read_duration")
+    }
+}
+
 @Database(
     entities = [
         TagEntity::class,
@@ -44,7 +50,7 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
         BookEntity::class,
         TrashEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

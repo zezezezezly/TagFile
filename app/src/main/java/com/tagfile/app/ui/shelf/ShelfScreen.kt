@@ -3,8 +3,6 @@ package com.tagfile.app.ui.shelf
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -32,7 +30,8 @@ fun ShelfScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToBookDetail: (Long) -> Unit = {},
     onNavigateToShelfSettings: () -> Unit = {},
-    onNavigateToBrowse: (String, String) -> Unit = { _, _ -> }
+    onNavigateToBrowse: (String, String) -> Unit = { _, _ -> },
+    onNavigateToHistory: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -54,6 +53,9 @@ fun ShelfScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToHistory) {
+                        Icon(Icons.Default.History, contentDescription = "历史记录")
+                    }
                     IconButton(onClick = onNavigateToShelfSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "书架设置")
                     }
@@ -170,45 +172,17 @@ fun ShelfScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(uiState.recommendations) { book ->
-                        RecommendationCard(
-                            book = book,
-                            onClick = { onNavigateToBookDetail(book.id) },
-                            modifier = Modifier.width(120.dp)
-                        )
-                    }
-                }
-            }
-
-            if (uiState.recentlyRead.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "最近阅读",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(uiState.recentlyRead) { book ->
+                    uiState.recommendations.forEach { book ->
                         RecommendationCard(
                             book = book,
                             onClick = { onNavigateToBookDetail(book.id) },
-                            modifier = Modifier.width(120.dp)
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }

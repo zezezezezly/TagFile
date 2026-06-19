@@ -412,7 +412,7 @@ fun BookDetailScreen(
                         StatItem(
                             icon = Icons.Default.Timer,
                             label = "阅读时长",
-                            value = formatDuration(book.totalDuration)
+                            value = formatDuration(book.readDuration)
                         )
                     }
 

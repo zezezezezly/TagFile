@@ -6,7 +6,6 @@ import com.tagfile.app.domain.repository.SearchMode
 data class ShelfUiState(
     val books: List<Book> = emptyList(),
     val recommendations: List<Book> = emptyList(),
-    val recentlyRead: List<Book> = emptyList(),
     val searchQuery: String = "",
     val searchMode: SearchMode = SearchMode.TITLE,
     val isScanning: Boolean = false,

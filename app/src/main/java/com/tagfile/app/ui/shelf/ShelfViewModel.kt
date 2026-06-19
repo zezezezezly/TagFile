@@ -44,7 +44,6 @@ class ShelfViewModel @Inject constructor(
 
         loadAllBooks()
         loadRecommendations()
-        loadRecentlyRead()
     }
 
     fun onEvent(event: ShelfEvent) {
@@ -110,14 +109,6 @@ class ShelfViewModel @Inject constructor(
                 val books = shelfRepository.getDailyRecommendations(3, seed)
                 _uiState.update { it.copy(recommendations = books) }
             } catch (_: Exception) { }
-        }
-    }
-
-    private fun loadRecentlyRead() {
-        viewModelScope.launch {
-            shelfRepository.getRecentlyReadBooks(10).collect { books ->
-                _uiState.update { it.copy(recentlyRead = books) }
-            }
         }
     }
 

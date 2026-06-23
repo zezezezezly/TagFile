@@ -31,7 +31,6 @@ import com.tagfile.app.ui.tagmanager.TagManagerScreen
 import com.tagfile.app.ui.trash.TrashScreen
 import com.tagfile.app.ui.typefiles.TypeFilesScreen
 import com.tagfile.app.ui.untagged.UntaggedFilesScreen
-import org.json.JSONArray
 
 object Routes {
     const val HOME = "home"
@@ -43,7 +42,7 @@ object Routes {
     const val CATEGORY = "category"
     const val SETTINGS = "settings"
     const val PERSONALIZATION = "personalization"
-    const val IMAGE_VIEWER = "image_viewer?paths={paths}&index={index}"
+    const val IMAGE_VIEWER = "image_viewer?folder={folder}&index={index}"
     const val ENHANCE = "enhance?path={path}"
     const val FILTER_LIBRARY = "filter_library"
     const val FILTER_SETTINGS = "filter_settings/{filterId}"
@@ -279,18 +278,14 @@ fun NavGraph(navController: NavHostController) {
         composable(
             route = Routes.IMAGE_VIEWER,
             arguments = listOf(
-                navArgument("paths") { type = NavType.StringType },
+                navArgument("folder") { type = NavType.StringType },
                 navArgument("index") { type = NavType.IntType; defaultValue = 0 }
             )
         ) { backStackEntry ->
-            val pathsJson = backStackEntry.arguments?.getString("paths") ?: "[]"
+            val folder = Uri.decode(backStackEntry.arguments?.getString("folder") ?: "")
             val index = backStackEntry.arguments?.getInt("index") ?: 0
-            val paths: List<String> = try {
-                val jsonArray = JSONArray(pathsJson)
-                (0 until jsonArray.length()).map { jsonArray.getString(it) }
-            } catch (_: Exception) { emptyList() }
             ImageViewerScreen(
-                imagePaths = paths,
+                folder = folder,
                 initialIndex = index,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEnhance = { path ->
@@ -404,8 +399,7 @@ fun navigateToImageViewer(
     index: Int
 ) {
     if (imagePaths.isEmpty()) return
-    val jsonArray = JSONArray(imagePaths)
-    val encodedPaths = Uri.encode(jsonArray.toString())
+    val folder = java.io.File(imagePaths.first()).parent ?: return
     val safeIndex = index.coerceIn(0, (imagePaths.size - 1).coerceAtLeast(0))
-    navController.navigate("image_viewer?paths=$encodedPaths&index=$safeIndex")
+    navController.navigate("image_viewer?folder=${Uri.encode(folder)}&index=$safeIndex")
 }

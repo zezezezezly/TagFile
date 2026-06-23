@@ -74,16 +74,26 @@ import dagger.hilt.android.EntryPointAccessors
 import java.io.File
 import kotlinx.coroutines.launch
 
+private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "heif")
+
+private fun loadImagesFromFolder(folderPath: String): List<String> {
+    val folder = File(folderPath)
+    if (!folder.exists() || !folder.isDirectory) return emptyList()
+    return folder.listFiles { f ->
+        f.isFile && f.extension.lowercase() in IMAGE_EXTENSIONS
+    }?.sortedBy { it.name }?.map { it.absolutePath } ?: emptyList()
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ImageViewerScreen(
-    imagePaths: List<String>,
+    folder: String,
     initialIndex: Int,
     onNavigateBack: () -> Unit = {},
     onNavigateToEnhance: (String) -> Unit = {},
     viewModel: ImageViewerViewModel = hiltViewModel()
 ) {
-    val validPaths = imagePaths.filter { File(it).exists() }
+    val validPaths = remember(folder) { loadImagesFromFolder(folder) }
     if (validPaths.isEmpty()) {
         onNavigateBack()
         return

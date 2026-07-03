@@ -1,9 +1,12 @@
 package com.tagfile.app.ui.tagmanager
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -16,19 +19,20 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tagfile.app.ui.common.GlassBottomSheet
-import com.tagfile.app.ui.common.GlassCard
 import com.tagfile.app.ui.common.SearchBar
 import com.tagfile.app.ui.common.TagChip
 import com.tagfile.app.ui.theme.toTagColorOrGray
@@ -60,16 +64,13 @@ fun TagManagerScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { viewModel.onEvent(TagManagerEvent.ShowGroupManagement) }) {
+                        Icon(Icons.Default.Settings, contentDescription = "管理分组")
+                    }
                     IconButton(onClick = { viewModel.onEvent(TagManagerEvent.ToggleSortMode) }) {
                         Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "排序")
                     }
-                    IconButton(onClick = {
-                        if (uiState.selectedGroup != null) {
-                            viewModel.onEvent(TagManagerEvent.ShowCreateDialogWithGroup(uiState.selectedGroup))
-                        } else {
-                            viewModel.onEvent(TagManagerEvent.ShowCreateDialog)
-                        }
-                    }) {
+                    IconButton(onClick = { viewModel.onEvent(TagManagerEvent.ShowCreateDialog) }) {
                         Icon(Icons.Default.Add, contentDescription = "创建标签")
                     }
                 }
@@ -83,46 +84,6 @@ fun TagManagerScreen(
                 placeholder = "搜索标签..."
             )
 
-            if (uiState.allGroups.isNotEmpty()) {
-                GlassCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                ) {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        item {
-                            FilterChip(
-                                selected = uiState.selectedGroup == null,
-                                onClick = { viewModel.onEvent(TagManagerEvent.SelectGroup(null)) },
-                                label = { Text("全部") }
-                            )
-                        }
-                        items(uiState.allGroups) { group ->
-                            FilterChip(
-                                selected = uiState.selectedGroup == group,
-                                onClick = { viewModel.onEvent(TagManagerEvent.SelectGroup(group)) },
-                                label = { Text(group) }
-                            )
-                        }
-                        item {
-                            IconButton(
-                                onClick = { viewModel.onEvent(TagManagerEvent.ShowGroupManagement) },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Settings,
-                                    contentDescription = "管理分组",
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
             val sortLabel = when (uiState.sortMode) {
                 TagSortMode.COLOR -> "按颜色排序"
                 TagSortMode.FILE_COUNT -> "按文件数量排序"
@@ -135,89 +96,86 @@ fun TagManagerScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
-            if (uiState.filteredTags.isEmpty()) {
+            if (uiState.tags.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            if (uiState.searchQuery.isNotEmpty()) "未找到匹配的标签"
-                            else "暂无标签",
+                            "暂无标签",
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        if (uiState.searchQuery.isEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            TextButton(onClick = {
-                                if (uiState.selectedGroup != null) {
-                                    viewModel.onEvent(TagManagerEvent.ShowCreateDialogWithGroup(uiState.selectedGroup))
-                                } else {
-                                    viewModel.onEvent(TagManagerEvent.ShowCreateDialog)
-                                }
-                            }) {
-                                Text("创建第一个标签")
-                            }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        TextButton(onClick = { viewModel.onEvent(TagManagerEvent.ShowCreateDialog) }) {
+                            Text("创建第一个标签")
+                        }
+                    }
+                }
+            } else if (uiState.searchQuery.isNotBlank()) {
+                // Search mode: flat list
+                if (uiState.filteredTags.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("未找到匹配的标签", style = MaterialTheme.typography.bodyLarge)
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        itemsIndexed(uiState.filteredTags, key = { _, tag -> tag.id }) { _, tag ->
+                            TagItemCard(
+                                tag = tag,
+                                showFileCount = uiState.sortMode == TagSortMode.FILE_COUNT,
+                                fileCount = uiState.tagFileCounts[tag.id] ?: 0,
+                                onNavigateToTaggedFiles = onNavigateToTaggedFiles,
+                                onEdit = { viewModel.onEvent(TagManagerEvent.ShowEditDialog(tag)) },
+                                onDelete = { viewModel.onEvent(TagManagerEvent.ShowDeleteConfirm(tag)) }
+                            )
                         }
                     }
                 }
             } else {
+                // Grouped mode
                 LazyColumn(
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    itemsIndexed(uiState.filteredTags, key = { _, tag -> tag.id }) { _, tag ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = { onNavigateToTaggedFiles(tag.id) }
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    uiState.groupedTags.forEach { group ->
+                        val groupName = group.groupName ?: "未分组"
+                        val groupKey = group.groupName ?: "ungrouped"
+                        val isCollapsed = uiState.isCollapsed(group.groupName)
+
+                        item(key = "header_$groupKey") {
+                            GroupHeader(
+                                groupName = groupName,
+                                tagCount = group.tags.size,
+                                isCollapsed = isCollapsed,
+                                onClick = { viewModel.onEvent(TagManagerEvent.ToggleGroupCollapse(groupKey)) }
+                            )
+                        }
+
+                        item(key = "content_$groupKey") {
+                            AnimatedVisibility(
+                                visible = !isCollapsed,
+                                enter = expandVertically(),
+                                exit = shrinkVertically()
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    TagChip(
-                                        name = tag.name,
-                                        color = tag.color.toTagColorOrGray()
-                                    )
-                                    if (!tag.groupName.isNullOrBlank()) {
-                                        Text(
-                                            text = tag.groupName,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    group.tags.forEach { tag ->
+                                        TagItemCard(
+                                            tag = tag,
+                                            showFileCount = uiState.sortMode == TagSortMode.FILE_COUNT,
+                                            fileCount = uiState.tagFileCounts[tag.id] ?: 0,
+                                            onNavigateToTaggedFiles = onNavigateToTaggedFiles,
+                                            onEdit = { viewModel.onEvent(TagManagerEvent.ShowEditDialog(tag)) },
+                                            onDelete = { viewModel.onEvent(TagManagerEvent.ShowDeleteConfirm(tag)) },
+                                            indent = true
                                         )
                                     }
-                                }
-                                if (uiState.sortMode == TagSortMode.FILE_COUNT) {
-                                    val count = uiState.tagFileCounts[tag.id] ?: 0
-                                    Text(
-                                        text = "$count",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                                IconButton(
-                                    onClick = { viewModel.onEvent(TagManagerEvent.ShowEditDialog(tag)) },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Edit,
-                                        contentDescription = "编辑",
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                                IconButton(
-                                    onClick = { viewModel.onEvent(TagManagerEvent.ShowDeleteConfirm(tag)) },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "删除",
-                                        modifier = Modifier.size(18.dp)
-                                    )
                                 }
                             }
                         }
@@ -277,6 +235,104 @@ fun TagManagerScreen(
             },
             onDismissMessage = { viewModel.onEvent(TagManagerEvent.DismissGroupManagementMessage) }
         )
+    }
+}
+
+@Composable
+private fun GroupHeader(
+    groupName: String,
+    tagCount: Int,
+    isCollapsed: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (isCollapsed) Icons.Default.KeyboardArrowRight else Icons.Default.KeyboardArrowDown,
+                contentDescription = if (isCollapsed) "展开" else "折叠",
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = groupName,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TagItemCard(
+    tag: com.tagfile.app.domain.model.Tag,
+    showFileCount: Boolean,
+    fileCount: Int,
+    onNavigateToTaggedFiles: (Long) -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    indent: Boolean = false
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = { onNavigateToTaggedFiles(tag.id) }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = if (indent) 24.dp else 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            TagChip(
+                name = tag.name,
+                color = tag.color.toTagColorOrGray()
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            if (showFileCount) {
+                Text(
+                    text = "$fileCount",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(
+                onClick = onEdit,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "编辑",
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "删除",
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
     }
 }
 

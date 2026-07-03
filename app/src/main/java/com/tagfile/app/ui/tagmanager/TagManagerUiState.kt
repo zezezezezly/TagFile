@@ -19,17 +19,13 @@ data class TagManagerUiState(
     val deleteTargetTag: Tag? = null,
     val message: String? = null,
     val allGroups: List<String> = emptyList(),
-    val selectedGroup: String? = null,
     val showGroupManagement: Boolean = false,
-    val groupManagementMessage: String? = null
+    val groupManagementMessage: String? = null,
+    val collapsedGroups: Set<String> = emptySet()
 ) {
     val filteredTags: List<Tag>
         get() {
-            val base = if (selectedGroup != null) {
-                tags.filter { it.groupName == selectedGroup }
-            } else {
-                tags
-            }.let {
+            val base = tags.let {
                 if (searchQuery.isBlank()) it
                 else it.filter { it.name.contains(searchQuery, ignoreCase = true) }
             }
@@ -39,6 +35,40 @@ data class TagManagerUiState(
                 TagSortMode.DEFAULT -> base
             }
         }
+
+    data class GroupedTags(
+        val groupName: String?,
+        val tags: List<Tag>
+    )
+
+    val groupedTags: List<GroupedTags>
+        get() {
+            if (searchQuery.isNotBlank()) {
+                return emptyList()
+            }
+            val grouped = tags.filter { !it.groupName.isNullOrBlank() }
+                .groupBy { it.groupName!! }
+                .toSortedMap() // Alphabetical by group name
+                .toMutableMap()
+            val ungrouped = tags.filter { it.groupName.isNullOrBlank() }
+            val result = grouped.entries.map { GroupedTags(it.key, sortGroupTags(it.value)) }.toMutableList()
+            if (ungrouped.isNotEmpty()) {
+                result.add(GroupedTags(null, sortGroupTags(ungrouped)))
+            }
+            return result
+        }
+
+    private fun sortGroupTags(tags: List<Tag>): List<Tag> {
+        return when (sortMode) {
+            TagSortMode.COLOR -> tags.sortedBy { it.color }
+            TagSortMode.FILE_COUNT -> tags.sortedByDescending { tagFileCounts[it.id] ?: 0 }
+            TagSortMode.DEFAULT -> tags
+        }
+    }
+
+    fun isCollapsed(groupName: String?): Boolean {
+        return collapsedGroups.contains(groupName ?: "ungrouped")
+    }
 }
 
 sealed class TagManagerEvent {
@@ -58,11 +88,11 @@ sealed class TagManagerEvent {
     data class SearchQueryChanged(val query: String) : TagManagerEvent()
     object ClearMessage : TagManagerEvent()
     object ToggleSortMode : TagManagerEvent()
-    data class SelectGroup(val groupName: String?) : TagManagerEvent()
     object ShowGroupManagement : TagManagerEvent()
     object DismissGroupManagement : TagManagerEvent()
     data class RenameGroup(val oldName: String, val newName: String) : TagManagerEvent()
     data class DeleteGroup(val groupName: String) : TagManagerEvent()
     data class MergeGroups(val fromGroup: String, val toGroup: String) : TagManagerEvent()
     object DismissGroupManagementMessage : TagManagerEvent()
+    data class ToggleGroupCollapse(val groupKey: String) : TagManagerEvent()
 }

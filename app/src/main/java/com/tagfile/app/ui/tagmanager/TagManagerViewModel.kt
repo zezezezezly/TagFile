@@ -106,6 +106,18 @@ class TagManagerViewModel @Inject constructor(
             is TagManagerEvent.SelectGroup -> {
                 _uiState.update { it.copy(selectedGroup = event.groupName) }
             }
+            is TagManagerEvent.ShowGroupManagement -> {
+                _uiState.update { it.copy(showGroupManagement = true, groupManagementMessage = null) }
+            }
+            is TagManagerEvent.DismissGroupManagement -> {
+                _uiState.update { it.copy(showGroupManagement = false) }
+            }
+            is TagManagerEvent.RenameGroup -> renameGroup(event.oldName, event.newName)
+            is TagManagerEvent.DeleteGroup -> deleteGroup(event.groupName)
+            is TagManagerEvent.MergeGroups -> mergeGroups(event.fromGroup, event.toGroup)
+            is TagManagerEvent.DismissGroupManagementMessage -> {
+                _uiState.update { it.copy(groupManagementMessage = null) }
+            }
         }
     }
 
@@ -170,6 +182,54 @@ class TagManagerViewModel @Inject constructor(
             _uiState.update { it.copy(showDeleteConfirm = false, deleteTargetTag = null) }
             loadFileCounts()
             loadGroups()
+        }
+    }
+
+    private fun renameGroup(oldName: String, newName: String) {
+        viewModelScope.launch {
+            try {
+                tagRepository.renameGroup(oldName, newName.trim())
+                _uiState.update { it.copy(
+                    groupManagementMessage = "已重命名「$oldName」为「${newName.trim()}」",
+                    selectedGroup = if (_uiState.value.selectedGroup == oldName) newName.trim() else _uiState.value.selectedGroup
+                ) }
+                loadGroups()
+                loadTags()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(groupManagementMessage = "重命名失败: ${e.message}") }
+            }
+        }
+    }
+
+    private fun deleteGroup(groupName: String) {
+        viewModelScope.launch {
+            try {
+                tagRepository.clearGroup(groupName)
+                _uiState.update { it.copy(
+                    groupManagementMessage = "已删除分组「$groupName」（标签已保留）",
+                    selectedGroup = if (_uiState.value.selectedGroup == groupName) null else _uiState.value.selectedGroup
+                ) }
+                loadGroups()
+                loadTags()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(groupManagementMessage = "删除失败: ${e.message}") }
+            }
+        }
+    }
+
+    private fun mergeGroups(fromGroup: String, toGroup: String) {
+        viewModelScope.launch {
+            try {
+                tagRepository.mergeGroups(fromGroup, toGroup)
+                _uiState.update { it.copy(
+                    groupManagementMessage = "已将「$fromGroup」合并到「$toGroup」",
+                    selectedGroup = if (_uiState.value.selectedGroup == fromGroup) toGroup else _uiState.value.selectedGroup
+                ) }
+                loadGroups()
+                loadTags()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(groupManagementMessage = "合并失败: ${e.message}") }
+            }
         }
     }
 }

@@ -20,6 +20,7 @@ import com.tagfile.app.ui.shelf.BookDetailScreen
 import com.tagfile.app.ui.shelf.BookListScreen
 import com.tagfile.app.ui.shelf.ShelfScreen
 import com.tagfile.app.ui.history.ReadingHistoryScreen
+import com.tagfile.app.ui.statistics.ReadingStatisticsScreen
 import com.tagfile.app.ui.bookviewer.BookViewerScreen
 import com.tagfile.app.ui.settings.ShelfSettingsScreen
 import com.tagfile.app.ui.imageviewer.ImageViewerScreen
@@ -52,6 +53,7 @@ object Routes {
     const val BOOK_DETAIL = "book_detail/{bookId}"
     const val BOOK_VIEWER = "book_viewer/{bookId}"
     const val READING_HISTORY = "reading_history"
+    const val READING_STATISTICS = "reading_statistics"
     const val TRASH = "trash"
 
     const val FILE_LIST_NO_ARG = "file_list"
@@ -367,6 +369,18 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Routes.READING_HISTORY) {
             ReadingHistoryScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToBookDetail = { bookId ->
+                    navController.navigate(Routes.bookDetail(bookId))
+                },
+                onNavigateToStatistics = {
+                    navController.navigate(Routes.READING_STATISTICS)
+                }
+            )
+        }
+
+        composable(Routes.READING_STATISTICS) {
+            ReadingStatisticsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToBookDetail = { bookId ->
                     navController.navigate(Routes.bookDetail(bookId))

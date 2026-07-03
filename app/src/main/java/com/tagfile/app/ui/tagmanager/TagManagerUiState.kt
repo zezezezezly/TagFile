@@ -19,7 +19,9 @@ data class TagManagerUiState(
     val deleteTargetTag: Tag? = null,
     val message: String? = null,
     val allGroups: List<String> = emptyList(),
-    val selectedGroup: String? = null
+    val selectedGroup: String? = null,
+    val showGroupManagement: Boolean = false,
+    val groupManagementMessage: String? = null
 ) {
     val filteredTags: List<Tag>
         get() {
@@ -57,4 +59,10 @@ sealed class TagManagerEvent {
     object ClearMessage : TagManagerEvent()
     object ToggleSortMode : TagManagerEvent()
     data class SelectGroup(val groupName: String?) : TagManagerEvent()
+    object ShowGroupManagement : TagManagerEvent()
+    object DismissGroupManagement : TagManagerEvent()
+    data class RenameGroup(val oldName: String, val newName: String) : TagManagerEvent()
+    data class DeleteGroup(val groupName: String) : TagManagerEvent()
+    data class MergeGroups(val fromGroup: String, val toGroup: String) : TagManagerEvent()
+    object DismissGroupManagementMessage : TagManagerEvent()
 }

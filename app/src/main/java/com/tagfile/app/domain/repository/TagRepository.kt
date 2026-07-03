@@ -21,4 +21,7 @@ interface TagRepository {
     suspend fun deleteAllCrossRefsByFilePath(filePath: String)
     suspend fun getTagFileCounts(): Map<Long, Int>
     suspend fun getAllGroups(): List<String>
+    suspend fun renameGroup(oldName: String, newName: String)
+    suspend fun clearGroup(groupName: String)
+    suspend fun mergeGroups(fromGroup: String, toGroup: String)
 }

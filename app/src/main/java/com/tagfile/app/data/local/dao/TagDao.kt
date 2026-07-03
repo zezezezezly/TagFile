@@ -38,4 +38,13 @@ interface TagDao {
 
     @Query("DELETE FROM tags")
     suspend fun deleteAll()
+
+    @Query("UPDATE tags SET group_name = :newName WHERE group_name = :oldName")
+    suspend fun renameGroup(oldName: String, newName: String)
+
+    @Query("UPDATE tags SET group_name = NULL WHERE group_name = :groupName")
+    suspend fun clearGroup(groupName: String)
+
+    @Query("UPDATE tags SET group_name = :toGroup WHERE group_name = :fromGroup")
+    suspend fun mergeGroups(fromGroup: String, toGroup: String)
 }

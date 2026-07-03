@@ -24,4 +24,8 @@ interface ShelfRepository {
     fun getAllBookTags(): Flow<List<com.tagfile.app.domain.model.Tag>>
     suspend fun repairBookData(): List<RepairResult>
     suspend fun updateCurrentPage(bookId: Long, page: Int)
+    suspend fun getTotalReadDuration(): Long
+    suspend fun getReadBookCount(): Int
+    suspend fun getActiveDays(): Int
+    suspend fun getTopBooksByDuration(limit: Int): List<Book>
 }

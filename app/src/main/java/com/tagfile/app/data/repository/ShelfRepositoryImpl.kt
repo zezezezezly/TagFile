@@ -269,6 +269,22 @@ class ShelfRepositoryImpl @Inject constructor(
         bookDao.updateCurrentPage(bookId, page)
     }
 
+    override suspend fun getTotalReadDuration(): Long {
+        return bookDao.getTotalReadDuration()
+    }
+
+    override suspend fun getReadBookCount(): Int {
+        return bookDao.getReadBookCount()
+    }
+
+    override suspend fun getActiveDays(): Int {
+        return bookDao.getActiveDays()
+    }
+
+    override suspend fun getTopBooksByDuration(limit: Int): List<Book> {
+        return bookDao.getTopBooksByDuration(limit).map { it.toDomain() }
+    }
+
     override suspend fun repairBookData(): List<RepairResult> {
         val books = bookDao.getAllList().map { it.toDomain() }
         val results = mutableListOf<RepairResult>()

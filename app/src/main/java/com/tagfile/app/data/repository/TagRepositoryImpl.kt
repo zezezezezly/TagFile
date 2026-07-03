@@ -96,4 +96,16 @@ class TagRepositoryImpl @Inject constructor(
     override suspend fun getAllGroups(): List<String> {
         return tagDao.getAllGroups()
     }
+
+    override suspend fun renameGroup(oldName: String, newName: String) {
+        tagDao.renameGroup(oldName, newName)
+    }
+
+    override suspend fun clearGroup(groupName: String) {
+        tagDao.clearGroup(groupName)
+    }
+
+    override suspend fun mergeGroups(fromGroup: String, toGroup: String) {
+        tagDao.mergeGroups(fromGroup, toGroup)
+    }
 }

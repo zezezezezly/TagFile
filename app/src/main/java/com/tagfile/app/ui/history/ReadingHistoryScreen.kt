@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -32,7 +33,8 @@ import java.util.Locale
 fun ReadingHistoryScreen(
     viewModel: ReadingHistoryViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
-    onNavigateToBookDetail: (Long) -> Unit = {}
+    onNavigateToBookDetail: (Long) -> Unit = {},
+    onNavigateToStatistics: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -43,6 +45,11 @@ fun ReadingHistoryScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToStatistics) {
+                        Icon(Icons.Filled.BarChart, contentDescription = "阅读统计")
                     }
                 }
             )

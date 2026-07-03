@@ -77,4 +77,16 @@ interface BookDao {
 
     @Query("UPDATE books SET current_page = :page WHERE id = :id")
     suspend fun updateCurrentPage(id: Long, page: Int)
+
+    @Query("SELECT COALESCE(SUM(read_duration), 0) FROM books")
+    suspend fun getTotalReadDuration(): Long
+
+    @Query("SELECT COUNT(*) FROM books WHERE read_duration > 0")
+    suspend fun getReadBookCount(): Int
+
+    @Query("SELECT COUNT(DISTINCT last_read_time / 86400000) FROM books WHERE last_read_time > 0")
+    suspend fun getActiveDays(): Int
+
+    @Query("SELECT * FROM books WHERE read_duration > 0 ORDER BY read_duration DESC LIMIT :limit")
+    suspend fun getTopBooksByDuration(limit: Int): List<BookEntity>
 }

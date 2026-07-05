@@ -24,4 +24,5 @@ interface TagRepository {
     suspend fun renameGroup(oldName: String, newName: String)
     suspend fun clearGroup(groupName: String)
     suspend fun mergeGroups(fromGroup: String, toGroup: String)
+    suspend fun moveUngroupedToGroup(targetGroup: String)
 }

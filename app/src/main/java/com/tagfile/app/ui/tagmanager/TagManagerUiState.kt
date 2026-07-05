@@ -69,6 +69,9 @@ data class TagManagerUiState(
     fun isCollapsed(groupName: String?): Boolean {
         return collapsedGroups.contains(groupName ?: "ungrouped")
     }
+
+    val ungroupedCount: Int
+        get() = tags.count { it.groupName.isNullOrBlank() }
 }
 
 sealed class TagManagerEvent {
@@ -95,4 +98,5 @@ sealed class TagManagerEvent {
     data class MergeGroups(val fromGroup: String, val toGroup: String) : TagManagerEvent()
     object DismissGroupManagementMessage : TagManagerEvent()
     data class ToggleGroupCollapse(val groupKey: String) : TagManagerEvent()
+    data class MoveUngroupedToGroup(val targetGroup: String) : TagManagerEvent()
 }

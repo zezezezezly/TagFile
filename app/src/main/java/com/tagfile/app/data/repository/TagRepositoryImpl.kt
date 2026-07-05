@@ -108,4 +108,8 @@ class TagRepositoryImpl @Inject constructor(
     override suspend fun mergeGroups(fromGroup: String, toGroup: String) {
         tagDao.mergeGroups(fromGroup, toGroup)
     }
+
+    override suspend fun moveUngroupedToGroup(targetGroup: String) {
+        tagDao.moveUngroupedToGroup(targetGroup)
+    }
 }

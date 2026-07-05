@@ -222,6 +222,7 @@ fun TagManagerScreen(
     if (uiState.showGroupManagement) {
         GroupManagementSheet(
             groups = uiState.allGroups,
+            ungroupedCount = uiState.ungroupedCount,
             message = uiState.groupManagementMessage,
             onDismiss = { viewModel.onEvent(TagManagerEvent.DismissGroupManagement) },
             onRenameGroup = { oldName, newName ->
@@ -232,6 +233,9 @@ fun TagManagerScreen(
             },
             onMergeGroups = { fromGroup, toGroup ->
                 viewModel.onEvent(TagManagerEvent.MergeGroups(fromGroup, toGroup))
+            },
+            onMoveUngroupedToGroup = { targetGroup ->
+                viewModel.onEvent(TagManagerEvent.MoveUngroupedToGroup(targetGroup))
             },
             onDismissMessage = { viewModel.onEvent(TagManagerEvent.DismissGroupManagementMessage) }
         )
@@ -340,11 +344,13 @@ private fun TagItemCard(
 @Composable
 private fun GroupManagementSheet(
     groups: List<String>,
+    ungroupedCount: Int,
     message: String?,
     onDismiss: () -> Unit,
     onRenameGroup: (String, String) -> Unit,
     onDeleteGroup: (String) -> Unit,
     onMergeGroups: (String, String) -> Unit,
+    onMoveUngroupedToGroup: (String) -> Unit,
     onDismissMessage: () -> Unit
 ) {
     var editingGroup by remember { mutableStateOf<String?>(null) }
@@ -524,6 +530,42 @@ private fun GroupManagementSheet(
                                     Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text("从「$group」合并", style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (ungroupedCount > 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        "转移未分组标签",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "当前有 $ungroupedCount 个未分组标签，选择目标分组：",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LazyColumn(modifier = Modifier.heightIn(max = 160.dp)) {
+                        items(groups) { group ->
+                            Surface(
+                                onClick = { onMoveUngroupedToGroup(group) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.SwapHoriz, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("转移到「$group」", style = MaterialTheme.typography.bodyMedium)
                                 }
                             }
                         }

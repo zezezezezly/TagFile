@@ -124,6 +124,7 @@ class TagManagerViewModel @Inject constructor(
                     state.copy(collapsedGroups = collapsed)
                 }
             }
+            is TagManagerEvent.MoveUngroupedToGroup -> moveUngroupedToGroup(event.targetGroup)
         }
     }
 
@@ -232,6 +233,22 @@ class TagManagerViewModel @Inject constructor(
                 loadTags()
             } catch (e: Exception) {
                 _uiState.update { it.copy(groupManagementMessage = "合并失败: ${e.message}") }
+            }
+        }
+    }
+
+    private fun moveUngroupedToGroup(targetGroup: String) {
+        viewModelScope.launch {
+            try {
+                tagRepository.moveUngroupedToGroup(targetGroup)
+                val count = _uiState.value.ungroupedCount
+                _uiState.update { it.copy(
+                    groupManagementMessage = "已将 $count 个未分组标签转移到「$targetGroup」"
+                ) }
+                loadGroups()
+                loadTags()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(groupManagementMessage = "转移失败: ${e.message}") }
             }
         }
     }

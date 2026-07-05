@@ -47,4 +47,7 @@ interface TagDao {
 
     @Query("UPDATE tags SET group_name = :toGroup WHERE group_name = :fromGroup")
     suspend fun mergeGroups(fromGroup: String, toGroup: String)
+
+    @Query("UPDATE tags SET group_name = :targetGroup WHERE group_name IS NULL OR group_name = ''")
+    suspend fun moveUngroupedToGroup(targetGroup: String)
 }

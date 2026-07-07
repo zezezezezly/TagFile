@@ -233,9 +233,11 @@ fun FileListScreen(
         floatingActionButton = {
             if (!uiState.isSelectionMode) {
                 FloatingActionButton(
-                    onClick = { viewModel.onEvent(FileListEvent.ShowNewFolderDialog) }
+                    onClick = { viewModel.onEvent(FileListEvent.ShowNewFolderDialog) },
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    contentColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Icon(Icons.Default.CreateNewFolder, contentDescription = "新建文件夹")
+                    Icon(Icons.Default.CreateNewFolder, contentDescription = "新建文件夹", modifier = Modifier.size(36.dp))
                 }
             }
         }

@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tagfile.app.ui.common.GlassBottomSheet
+import com.tagfile.app.ui.common.GlassDialog
 import com.tagfile.app.ui.common.SearchBar
 import com.tagfile.app.ui.common.TagChip
 import com.tagfile.app.ui.theme.toTagColorOrGray
@@ -200,7 +201,7 @@ fun TagManagerScreen(
     }
 
     if (uiState.showDeleteConfirm) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(TagManagerEvent.DismissDeleteConfirm) },
             title = { Text("删除标签") },
             text = {
@@ -578,7 +579,7 @@ private fun GroupManagementSheet(
     }
 
     if (showDeleteConfirm != null) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { showDeleteConfirm = null },
             title = { Text("删除分组") },
             text = {

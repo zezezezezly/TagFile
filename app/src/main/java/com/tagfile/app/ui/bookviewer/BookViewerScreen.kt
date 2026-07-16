@@ -89,7 +89,9 @@ fun BookViewerScreen(
 
     DisposableEffect(lifecycleOwner) {
         viewModel.bindLifecycle(lifecycleOwner)
-        onDispose { }
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(viewModel)
+        }
     }
 
     val viewerImageLoader = remember {
@@ -161,12 +163,14 @@ fun BookViewerScreen(
         window.statusBarColor = android.graphics.Color.TRANSPARENT
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
         val controller = WindowCompat.getInsetsController(window, window.decorView)
+        val wasLightStatusBars = controller.isAppearanceLightStatusBars
+        val wasLightNavBars = controller.isAppearanceLightNavigationBars
         controller.isAppearanceLightStatusBars = false
         controller.isAppearanceLightNavigationBars = false
         onDispose {
             val ctrl = WindowCompat.getInsetsController(window, window.decorView)
-            ctrl.isAppearanceLightStatusBars = true
-            ctrl.isAppearanceLightNavigationBars = true
+            ctrl.isAppearanceLightStatusBars = wasLightStatusBars
+            ctrl.isAppearanceLightNavigationBars = wasLightNavBars
             viewModel.clearEnhanced()
         }
     }

@@ -224,36 +224,33 @@ class ShelfRepositoryImpl @Inject constructor(
         val parentDir = oldFolder.parentFile ?: return
         val oldName = oldFolder.name
 
-        // 解析现有作者
-    val authorPattern = Regex("""^[\[［](.+?)[]］]\s*(.*)""")
+        val authorPattern = Regex("""^[\[［](.+?)[]］]\s*(.*)""")
         val (_, titlePart) = authorPattern.find(oldName)?.let { match ->
             val authorPart = match.groupValues[1].trim()
             val title = match.groupValues[2].trim().takeIf { it.isNotBlank() } ?: oldName
             authorPart to title
         } ?: ("" to oldName)
 
-        // 构造新文件夹名
         val newName = if (!author.isNullOrBlank()) {
             "[$author] $titlePart".trim()
         } else {
             titlePart
         }
 
-        // 重命名文件夹
-        if (oldName != newName) {
+        val renameSucceeded = if (oldName != newName) {
             val newFolder = File(parentDir, newName)
             oldFolder.renameTo(newFolder)
+        } else {
+            true
         }
 
-        // 更新数据库
-        val newFolderPath = if (oldName != newName) {
+        val newFolderPath = if (oldName != newName && renameSucceeded) {
             File(parentDir, newName).absolutePath
         } else {
             book.folderPath
         }
 
-        // 封面路径也需要更新（封面文件随文件夹一起移动）
-        val newCoverPath = if (oldName != newName && oldFolder.absolutePath.isNotEmpty()) {
+        val newCoverPath = if (oldName != newName && renameSucceeded && oldFolder.absolutePath.isNotEmpty()) {
             val coverFile = File(book.coverPath)
             val relativeCover = coverFile.name
             File(parentDir, "$newName/$relativeCover").absolutePath

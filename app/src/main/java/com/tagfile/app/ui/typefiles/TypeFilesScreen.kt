@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.automirrored.filled.LabelOff
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.*
@@ -98,7 +99,7 @@ fun TypeFilesScreen(
                         }
                         IconButton(onClick = { viewModel.onEvent(TypeFilesEvent.ShowRemoveTagSelector) }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.LabelOff, contentDescription = "取消标签")
+                                Icon(Icons.AutoMirrored.Filled.LabelOff, contentDescription = "取消标签")
                                 Text("取消标签", style = MaterialTheme.typography.labelSmall)
                             }
                         }

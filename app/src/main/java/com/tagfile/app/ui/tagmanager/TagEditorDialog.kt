@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.tagfile.app.ui.common.glassSurfaceColor
+import com.tagfile.app.ui.common.GlassDialog
 import com.tagfile.app.ui.theme.TagColors
 
 @Composable
@@ -32,10 +32,9 @@ fun TagEditorDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    AlertDialog(
+    GlassDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (isEditing) "编辑标签" else "创建标签") },
-        containerColor = glassSurfaceColor(),
         text = {
             Column {
                 OutlinedTextField(

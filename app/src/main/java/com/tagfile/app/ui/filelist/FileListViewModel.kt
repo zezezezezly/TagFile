@@ -185,8 +185,8 @@ class FileListViewModel @Inject constructor(
             compareBy<com.tagfile.app.domain.model.FileItem> { !it.isDirectory }.thenBy {
                 when (sort) {
                     SortOption.NAME -> it.name.lowercase()
-                    SortOption.DATE -> it.lastModified.toString()
-                    SortOption.SIZE -> it.size.toString()
+                    SortOption.DATE -> it.lastModified
+                    SortOption.SIZE -> it.size
                     SortOption.TYPE -> it.extension.lowercase()
                 }
             }

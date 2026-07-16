@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.automirrored.filled.LabelOff
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -88,7 +89,7 @@ fun TaggedFilesScreen(
                         }
                         IconButton(onClick = { viewModel.onEvent(TaggedFilesEvent.ShowRemoveTagSelector) }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.LabelOff, contentDescription = "取消标签")
+                                Icon(Icons.AutoMirrored.Filled.LabelOff, contentDescription = "取消标签")
                                 Text("取消标签", style = MaterialTheme.typography.labelSmall)
                             }
                         }
@@ -193,7 +194,7 @@ fun TaggedFilesScreen(
     }
 
     if (uiState.showTagSelector) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(TaggedFilesEvent.HideTagSelector) },
             title = { Text("添加标签") },
             text = {
@@ -241,7 +242,7 @@ fun TaggedFilesScreen(
     }
 
     if (uiState.showRemoveTagSelector) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(TaggedFilesEvent.HideRemoveTagSelector) },
             title = { Text("取消标签") },
             text = {
@@ -289,7 +290,7 @@ fun TaggedFilesScreen(
     }
 
     if (uiState.showRenameDialog) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(TaggedFilesEvent.HideRenameDialog) },
             title = { Text("重命名") },
             text = {
@@ -310,7 +311,7 @@ fun TaggedFilesScreen(
     }
 
     if (uiState.showDeleteConfirm) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(TaggedFilesEvent.DismissDeleteConfirm) },
             title = { Text("删除确认") },
             text = { Text("确定要删除选中的 ${uiState.selectedPaths.size} 个文件吗？") },

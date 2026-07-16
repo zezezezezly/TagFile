@@ -89,11 +89,16 @@ class EnhanceViewModel @Inject constructor(
                 processedBitmap?.recycle()
                 processedBitmap = enhanceImageUseCase(source, _uiState.value.params)
 
+                val resultBitmap = processedBitmap ?: run {
+                    _uiState.update { it.copy(isProcessing = false, error = "图像处理失败") }
+                    return@launch
+                }
+
                 val outputDir = File(context.cacheDir, "enhance")
                 outputDir.mkdirs()
                 val outputFile = File(outputDir, "enhanced_${System.currentTimeMillis()}.png")
                 FileOutputStream(outputFile).use { out ->
-                    processedBitmap?.compress(Bitmap.CompressFormat.PNG, 100, out)
+                    resultBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
                 }
 
                 _uiState.update {

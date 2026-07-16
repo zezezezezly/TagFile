@@ -52,6 +52,7 @@ class GpuProcessor {
         var inputTex = createTextureFromBitmap(source)
 
         if (params.upscaleFactor > 1 && params.upscaleFactor <= 4) {
+            val prog = drawProgram ?: return source
             val factor = params.upscaleFactor
             val upW = minOf(w * factor, 2048)
             val upH = minOf(h * factor, 2048)
@@ -62,7 +63,7 @@ class GpuProcessor {
             GLES20.glViewport(0, 0, upW, upH)
 
             val upTex = createEmptyTexture(upW, upH)
-            renderFullscreenQuad(upTex, upW, upH, drawProgram!!) { prog ->
+            renderFullscreenQuad(upTex, upW, upH, prog) { prog2 ->
                 bindTexture(0, inputTex, "uTexture")
             }
             deleteTexture(inputTex)
@@ -75,22 +76,25 @@ class GpuProcessor {
         var texB = createEmptyTexture(currentWidth, currentHeight)
 
         if (params.denoise > 0.01f) {
+            val prog = denoiseProgram ?: return source
             val rangeSigma = 40f + (1f - params.denoise) * 70f
-            renderFullscreenQuad(texB, currentWidth, currentHeight, denoiseProgram!!) { prog ->
-                prog.setUniform1f("uStrength", params.denoise)
-                prog.setUniform1f("uRangeSigma", rangeSigma)
-                prog.setUniform2f("uTexelSize", 1f / currentWidth, 1f / currentHeight)
+            renderFullscreenQuad(texB, currentWidth, currentHeight, prog) { prog2 ->
+                prog2.setUniform1f("uStrength", params.denoise)
+                prog2.setUniform1f("uRangeSigma", rangeSigma)
+                prog2.setUniform2f("uTexelSize", 1f / currentWidth, 1f / currentHeight)
                 bindTexture(0, texA, "uTexture")
             }
             val tmp = texA; texA = texB; texB = tmp
         }
 
         if (params.lineDarkening > 0.01f) {
+            val lineProg = lineDarkenProgram ?: return source
+            val lumProg = luminanceProgram ?: return source
             val blurRadius = maxOf(1, (params.lineDarkening * 4f).toInt())
             val threshold = 0.157f + (1f - params.lineDarkening) * 0.235f
 
             val lumTex = createEmptyTexture(currentWidth, currentHeight)
-            renderFullscreenQuad(lumTex, currentWidth, currentHeight, luminanceProgram!!) { prog ->
+            renderFullscreenQuad(lumTex, currentWidth, currentHeight, lumProg) { prog2 ->
                 bindTexture(0, texA, "uTexture")
             }
 
@@ -98,9 +102,9 @@ class GpuProcessor {
             val blurredLum = createEmptyTexture(currentWidth, currentHeight)
             renderBoxBlur(lumTex, blurTemp, blurredLum, currentWidth, currentHeight, blurRadius)
 
-            renderFullscreenQuad(texB, currentWidth, currentHeight, lineDarkenProgram!!) { prog ->
-                prog.setUniform1f("uStrength", params.lineDarkening)
-                prog.setUniform1f("uThreshold", threshold)
+            renderFullscreenQuad(texB, currentWidth, currentHeight, lineProg) { prog2 ->
+                prog2.setUniform1f("uStrength", params.lineDarkening)
+                prog2.setUniform1f("uThreshold", threshold)
                 bindTexture(0, texA, "uTexture")
                 bindTexture(1, blurredLum, "uBlurredLum")
             }
@@ -112,15 +116,17 @@ class GpuProcessor {
         }
 
         if (params.contrast > 0.01f || params.saturation > 0.01f) {
-            renderFullscreenQuad(texB, currentWidth, currentHeight, colorAdjustProgram!!) { prog ->
-                prog.setUniform1f("uContrast", params.contrast)
-                prog.setUniform1f("uSaturation", params.saturation)
+            val prog = colorAdjustProgram ?: return source
+            renderFullscreenQuad(texB, currentWidth, currentHeight, prog) { prog2 ->
+                prog2.setUniform1f("uContrast", params.contrast)
+                prog2.setUniform1f("uSaturation", params.saturation)
                 bindTexture(0, texA, "uTexture")
             }
             val tmp = texA; texA = texB; texB = tmp
         }
 
         if (params.sharpness > 0.01f) {
+            val prog = unsharpProgram ?: return source
             val amount = params.sharpness * 1.5f * (0.5f + params.strength * 0.5f)
             val edgeThreshold = (1f - params.sharpness) * 0.04f
             val blurRadius = maxOf(1, ((1f - params.sharpness) * 4f).toInt() + 1)
@@ -129,9 +135,9 @@ class GpuProcessor {
             val blurred = createEmptyTexture(currentWidth, currentHeight)
             renderBoxBlur(texA, blurTemp, blurred, currentWidth, currentHeight, blurRadius)
 
-            renderFullscreenQuad(texB, currentWidth, currentHeight, unsharpProgram!!) { prog ->
-                prog.setUniform1f("uAmount", amount)
-                prog.setUniform1f("uThreshold", edgeThreshold)
+            renderFullscreenQuad(texB, currentWidth, currentHeight, prog) { prog2 ->
+                prog2.setUniform1f("uAmount", amount)
+                prog2.setUniform1f("uThreshold", edgeThreshold)
                 bindTexture(0, texA, "uTexture")
                 bindTexture(1, blurred, "uBlurred")
             }
@@ -221,17 +227,18 @@ class GpuProcessor {
         sourceTex: Int, tempTex: Int, outputTex: Int,
         width: Int, height: Int, radius: Int
     ) {
-        renderFullscreenQuad(tempTex, width, height, boxBlurProgram!!) { prog ->
-            prog.setUniform1i("uRadius", radius)
-            prog.setUniform1i("uHorizontal", 1)
-            prog.setUniform2f("uTexelSize", 1f / width, 1f / height)
+        val prog = boxBlurProgram ?: return
+        renderFullscreenQuad(tempTex, width, height, prog) { prog2 ->
+            prog2.setUniform1i("uRadius", radius)
+            prog2.setUniform1i("uHorizontal", 1)
+            prog2.setUniform2f("uTexelSize", 1f / width, 1f / height)
             bindTexture(0, sourceTex, "uTexture")
         }
 
-        renderFullscreenQuad(outputTex, width, height, boxBlurProgram!!) { prog ->
-            prog.setUniform1i("uRadius", radius)
-            prog.setUniform1i("uHorizontal", 0)
-            prog.setUniform2f("uTexelSize", 1f / width, 1f / height)
+        renderFullscreenQuad(outputTex, width, height, prog) { prog2 ->
+            prog2.setUniform1i("uRadius", radius)
+            prog2.setUniform1i("uHorizontal", 0)
+            prog2.setUniform2f("uTexelSize", 1f / width, 1f / height)
             bindTexture(0, tempTex, "uTexture")
         }
     }

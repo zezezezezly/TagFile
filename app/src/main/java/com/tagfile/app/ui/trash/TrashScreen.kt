@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.tagfile.app.data.local.entity.TrashEntity
 import com.tagfile.app.ui.common.AnimatedLazyColumn
 import com.tagfile.app.ui.common.GlassCard
+import com.tagfile.app.ui.common.GlassDialog
 import com.tagfile.app.ui.common.SkeletonListItem
 import com.tagfile.app.ui.common.formatDateTime
 import com.tagfile.app.ui.common.formatFileSize
@@ -37,7 +38,7 @@ fun TrashScreen(
 
     // 清空回收站确认对话框
     if (showEmptyConfirm) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { showEmptyConfirm = false },
             title = { Text("清空回收站") },
             text = { Text("确定要清空回收站吗？此操作不可撤销。") },
@@ -58,7 +59,7 @@ fun TrashScreen(
     // 彻底删除确认对话框
     showDeleteConfirm?.let { itemId ->
         val item = uiState.items.find { it.id == itemId }
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { showDeleteConfirm = null },
             title = { Text("彻底删除") },
             text = { Text("确定要彻底删除「${item?.fileName ?: ""}」吗？此操作不可撤销。") },
@@ -102,7 +103,7 @@ fun TrashScreen(
             when {
                 uiState.isLoading -> {
                     LazyColumn {
-                        items(6) {
+                        items(6, key = { it }) {
                             SkeletonListItem()
                         }
                     }

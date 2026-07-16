@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.tagfile.app.ui.common.GlassDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +51,7 @@ fun SettingsScreen(
 
     // 导入模式选择对话框
     if (uiState.showImportModeDialog) {
-        AlertDialog(
+        GlassDialog(
             onDismissRequest = { viewModel.onEvent(SettingsEvent.DismissImportModeDialog) },
             title = { Text("导入模式") },
             text = { Text("请选择导入方式：\n\n· 全量替换：清空现有数据后导入\n· 合并：按主键覆盖已有数据") },

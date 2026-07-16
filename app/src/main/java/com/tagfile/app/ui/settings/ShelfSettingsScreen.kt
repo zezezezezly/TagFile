@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.tagfile.app.ui.common.GlassDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -169,7 +171,7 @@ fun ShelfSettingsScreen(
         }
 
         if (showResetDialog) {
-            AlertDialog(
+            GlassDialog(
                 onDismissRequest = { showResetDialog = false },
                 title = { Text("确认重置") },
                 text = { Text("确定要清空所有书籍数据吗？此操作不可撤销，您需要重新检索书籍。") },
@@ -208,7 +210,7 @@ private fun RepairResultDialog(
     results: List<com.tagfile.app.domain.model.RepairResult>,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    GlassDialog(
         onDismissRequest = onDismiss,
         title = { Text("修复结果（共 ${results.size} 项）") },
         text = {
@@ -217,7 +219,7 @@ private fun RepairResultDialog(
                     .fillMaxWidth()
                     .heightIn(max = 400.dp)
             ) {
-                items(results) { result ->
+                itemsIndexed(results, key = { i, _ -> i }) { _, result ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()

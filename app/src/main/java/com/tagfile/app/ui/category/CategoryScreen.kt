@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.automirrored.filled.LabelOff
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -83,7 +84,7 @@ fun CategoryScreen(
                         IconButton(onClick = { viewModel.onEvent(CategoryEvent.ShowRemoveTagSelector) }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 @Suppress("DEPRECATION")
-                                Icon(Icons.Default.LabelOff, contentDescription = "取消标签")
+                                Icon(Icons.AutoMirrored.Filled.LabelOff, contentDescription = "取消标签")
                                 Text("取消标签", style = MaterialTheme.typography.labelSmall)
                             }
                         }
@@ -228,7 +229,7 @@ fun CategoryScreen(
                         ) {
                             @Suppress("DEPRECATION")
                             Icon(
-                                Icons.Default.LabelOff,
+                                Icons.AutoMirrored.Filled.LabelOff,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(28.dp)

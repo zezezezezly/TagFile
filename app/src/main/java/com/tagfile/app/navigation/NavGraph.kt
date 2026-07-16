@@ -55,6 +55,7 @@ object Routes {
     const val READING_HISTORY = "reading_history"
     const val READING_STATISTICS = "reading_statistics"
     const val TRASH = "trash"
+    const val UNTAGGED_FILES = "untagged_files"
 
     const val FILE_LIST_NO_ARG = "file_list"
 
@@ -225,12 +226,12 @@ fun NavGraph(navController: NavHostController) {
                     navController.navigate(Routes.typeFiles(fileType))
                 },
                 onNavigateToUntaggedFiles = {
-                    navController.navigate("untagged_files")
+                    navController.navigate(Routes.UNTAGGED_FILES)
                 }
             )
         }
 
-        composable("untagged_files") {
+        composable(Routes.UNTAGGED_FILES) {
             UntaggedFilesScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToImageViewer = { paths, index ->

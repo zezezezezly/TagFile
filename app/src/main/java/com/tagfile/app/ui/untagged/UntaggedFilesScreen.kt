@@ -92,7 +92,7 @@ fun UntaggedFilesScreen(
                 modifier = Modifier.padding(padding),
                 contentPadding = PaddingValues(12.dp)
             ) {
-                items(uiState.files) { file ->
+                items(uiState.files, key = { it.path }) { file ->
                     FileItemCard(
                         file = file,
                         showTags = false,

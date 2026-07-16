@@ -234,10 +234,7 @@ class SearchRepositoryImpl @Inject constructor(
         val hasType = filter.fileTypes.isNotEmpty()
         return files.filter { file ->
             (filter.keyword.isBlank() || file.name.contains(filter.keyword, ignoreCase = true)) &&
-            (!dirOnly && !hasType || when {
-                file.isDirectory -> dirOnly
-                else -> hasType && FileType.fromExtension(file.extension) in filter.fileTypes
-            }) &&
+            (file.isDirectory || (!dirOnly && (!hasType || FileType.fromExtension(file.extension) in filter.fileTypes))) &&
             (filter.minSize == null || file.size >= filter.minSize) &&
             (filter.maxSize == null || file.size <= filter.maxSize) &&
             (filter.dateFrom == null || file.lastModified >= filter.dateFrom) &&

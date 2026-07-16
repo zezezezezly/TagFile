@@ -17,7 +17,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.LabelOff
+import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.automirrored.filled.LabelOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -91,7 +92,7 @@ fun SearchScreen(
                         }
                         IconButton(onClick = { viewModel.onEvent(SearchEvent.ShowRemoveTagSelector) }) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.LabelOff, contentDescription = "取消标签")
+                                Icon(Icons.AutoMirrored.Filled.LabelOff, contentDescription = "取消标签")
                                 Text("取消标签", style = MaterialTheme.typography.labelSmall)
                             }
                         }

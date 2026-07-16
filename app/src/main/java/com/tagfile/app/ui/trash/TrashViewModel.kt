@@ -1,5 +1,6 @@
 package com.tagfile.app.ui.trash
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tagfile.app.data.local.dao.TrashDao
@@ -27,7 +28,6 @@ class TrashViewModel @Inject constructor(
                 _uiState.update { it.copy(items = items, isLoading = false) }
             }
         }
-        // Auto-clean items older than 30 days
         viewModelScope.launch {
             val cutoff = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000
             trashDao.deleteOlderThan(cutoff)
@@ -39,25 +39,41 @@ class TrashViewModel @Inject constructor(
             val item = trashDao.getById(id) ?: return@launch
             val trashFile = File(item.trashPath)
             val originalFile = File(item.originalPath)
-            // Ensure parent directory exists
             originalFile.parentFile?.mkdirs()
-            trashFile.renameTo(originalFile)
-            trashDao.deleteById(id)
+            if (trashFile.renameTo(originalFile)) {
+                trashDao.deleteById(id)
+            } else {
+                Log.e("TrashViewModel", "Failed to restore file: ${item.originalPath}")
+            }
         }
     }
 
     fun permanentDelete(id: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             val item = trashDao.getById(id) ?: return@launch
-            File(item.trashPath).deleteRecursively()
-            trashDao.deleteById(id)
+            if (File(item.trashPath).deleteRecursively()) {
+                trashDao.deleteById(id)
+            } else {
+                Log.e("TrashViewModel", "Failed to permanently delete: ${item.trashPath}")
+            }
         }
     }
 
     fun emptyTrash() {
         viewModelScope.launch(Dispatchers.IO) {
-            trashDao.getAllList().forEach { File(it.trashPath).deleteRecursively() }
-            trashDao.deleteAll()
+            tailrec fun deleteAll(files: List<java.io.File>): Boolean {
+                if (files.isEmpty()) return true
+                val file = files.first()
+                val ok = if (file.isDirectory) file.deleteRecursively() else file.delete()
+                return ok && deleteAll(files.drop(1))
+            }
+            val trashFiles = trashDao.getAllList().map { File(it.trashPath) }
+            val success = deleteAll(trashFiles)
+            if (success) {
+                trashDao.deleteAll()
+            } else {
+                Log.e("TrashViewModel", "Failed to empty some trash files")
+            }
         }
     }
 }

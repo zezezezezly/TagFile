@@ -519,7 +519,7 @@ private fun GroupManagementSheet(
                 } else {
                     Spacer(modifier = Modifier.height(4.dp))
                     LazyColumn(modifier = Modifier.heightIn(max = 160.dp)) {
-                        items(groups) { group ->
+                        items(groups, key = { it }) { group ->
                             Surface(
                                 onClick = { mergeSource = group; showMergePicker = true },
                                 modifier = Modifier.fillMaxWidth()
@@ -555,7 +555,7 @@ private fun GroupManagementSheet(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     LazyColumn(modifier = Modifier.heightIn(max = 160.dp)) {
-                        items(groups) { group ->
+                        items(groups, key = { it }) { group ->
                             Surface(
                                 onClick = { onMoveUngroupedToGroup(group) },
                                 modifier = Modifier.fillMaxWidth()
